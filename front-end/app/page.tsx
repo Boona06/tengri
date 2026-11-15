@@ -1,6 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
+import { useEffect, useRef, useState } from "react";
+
+const OracleScene = dynamic(() => import("../components/OracleScene"), {
+  ssr: false,
+});
 
 type Card = {
   id: number;
@@ -128,24 +133,37 @@ export default function Home() {
   const [openedIds, setOpenedIds] = useState<number[]>([]);
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
   const [paymentCard, setPaymentCard] = useState<Card | null>(null);
+  const [flippingId, setFlippingId] = useState<number | null>(null);
+  const selectingRef = useRef(false);
 
   useEffect(() => {
     setCards((current) => shuffleCards(current));
   }, []);
 
   function chooseCard(card: Card) {
-    if (openedIds.includes(card.id)) {
-      setSelectedCard(card);
-      return;
-    }
+    if (selectingRef.current) return;
 
-    if (openedIds.length === 0) {
-      setOpenedIds([card.id]);
-      setSelectedCard(card);
-      return;
-    }
+    selectingRef.current = true;
+    setFlippingId(card.id);
 
-    setPaymentCard(card);
+    window.setTimeout(() => {
+      if (openedIds.includes(card.id)) {
+        setSelectedCard(card);
+      } else if (openedIds.length === 0) {
+        setOpenedIds([card.id]);
+        setSelectedCard(card);
+      } else {
+        setPaymentCard(card);
+      }
+
+      selectingRef.current = false;
+    }, 1500);
+  }
+
+  function closeCardModal() {
+    setSelectedCard(null);
+    setPaymentCard(null);
+    setFlippingId(null);
   }
 
   return (
@@ -217,66 +235,17 @@ export default function Home() {
         </div>
 
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-6 lg:grid-cols-4">
-          {cards.map((card, index) => {
-            const isOpened = openedIds.includes(card.id);
-            const isFree = openedIds.length === 0;
+          <OracleScene
+            cards={cards}
+            flippingId={flippingId}
+            onSelect={(id) => {
+              const card = cards.find((item) => item.id === id);
 
-            return (
-              <button
-                key={card.id}
-                onClick={() => chooseCard(card)}
-                className="group relative aspect-[3/4] overflow-hidden rounded-xl border border-[#a98b60]/40 bg-[#171022] text-left shadow-[0_15px_50px_rgba(0,0,0,0.35)] transition duration-500 hover:-translate-y-2 hover:border-[#e1c58e] hover:shadow-[0_20px_60px_rgba(184,143,86,0.2)]"
-              >
-                <div
-                  className="absolute inset-0 bg-cover bg-center opacity-90 transition duration-700 group-hover:scale-110"
-                  style={{
-                    backgroundImage: card.cover
-                      ? `linear-gradient(to bottom, rgba(12,7,22,0.08), rgba(12,7,22,0.8)), url(${card.cover})`
-                      : "radial-gradient(ellipse at center, #57316f 0%, #21142f 55%, #100b1b 100%)",
-                  }}
-                />
-
-                <div className="absolute inset-2 rounded-lg border border-[#d5b778]/40" />
-
-                <div className="absolute inset-0 flex flex-col items-center justify-center p-3 text-center">
-                  {!card.cover && (
-                    <>
-                      <span className="mb-5 text-4xl text-[#dfc28a]">
-                        {card.symbol}
-                      </span>
-                      <span className="text-4xl text-[#f1dbad] opacity-80">
-                        ✧
-                      </span>
-                      <div className="my-4 h-px w-12 bg-[#c5a36e]/70" />
-                      <span className="text-[10px] tracking-[0.3em] text-[#d8bd83]">
-                        TENGER
-                      </span>
-                    </>
-                  )}
-
-                  {card.cover && (
-                    <div className="absolute inset-x-0 bottom-8 px-2">
-                      <span className="text-xs tracking-[0.35em] text-white">
-                        ✧ TENGER ✧
-                      </span>
-                    </div>
-                  )}
-
-                  <div className="absolute bottom-3 rounded-full border border-[#d4b77e]/50 bg-[#100b1b]/80 px-3 py-1 text-[9px] tracking-wider text-[#e5c990]">
-                    {isOpened
-                      ? "НЭЭГДСЭН"
-                      : isFree
-                        ? "ҮНЭГҮЙ СОНГОЛТ"
-                        : "3,000₮"}
-                  </div>
-                </div>
-
-                <div className="absolute right-4 top-4 text-xs text-[#e4c78e]">
-                  {String(index + 1).padStart(2, "0")}
-                </div>
-              </button>
-            );
-          })}
+              if (card) {
+                chooseCard(card);
+              }
+            }}
+          />
         </div>
 
         <div className="mt-12 text-center">
@@ -322,7 +291,7 @@ export default function Home() {
             </p>
 
             <button
-              onClick={() => setSelectedCard(null)}
+              onClick={closeCardModal}
               className="mt-10 rounded-full border border-[#c3a16e]/70 px-9 py-3 text-xs tracking-[0.2em] text-[#dfc48e] transition hover:bg-[#c3a16e] hover:text-[#160f20]"
             >
               БУСАД КАРТ РУУ БУЦАХ
@@ -365,7 +334,7 @@ export default function Home() {
             </button>
 
             <button
-              onClick={() => setPaymentCard(null)}
+              onClick={closeCardModal}
               className="mt-5 text-xs text-[#a899ae] hover:text-white"
             >
               Буцах
