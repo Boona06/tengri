@@ -1,0 +1,83 @@
+
+generator client {
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  moduleFormat        = "esm"
+  importFileExtension = "ts"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum ContentType {
+  TOPIC
+  QUESTION
+}
+
+enum ContentStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum VisualType {
+  IMAGE
+  ICON
+}
+
+model Content {
+  id         String        @id @default(cuid())
+  type       ContentType
+  title      String
+  question   String?
+
+  visualType VisualType    @default(IMAGE)
+  imageUrl   String?
+  iconName   String?
+
+  status     ContentStatus @default(DRAFT)
+  sortOrder  Int           @default(0)
+
+  answers    Answer[]
+
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+}
+
+model Answer {
+  id         String     @id @default(cuid())
+
+  contentId  String
+  content    Content    @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  text       String     @db.Text
+
+  visualType VisualType @default(IMAGE)
+  imageUrl   String?
+  iconName   String?
+
+  position   Int        @default(0)
+
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  @@unique([contentId, position])
+}
+
+model AdminUser {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model SiteSettings {
+  id            String   @id @default("main")
+  cardPriceMnt  Int      @default(3000)
+  firstCardFree Boolean  @default(true)
+
+  updatedAt     DateTime @updatedAt
+}
