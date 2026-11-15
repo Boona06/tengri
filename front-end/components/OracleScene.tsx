@@ -1,9 +1,7 @@
 "use client";
 
-import { Suspense, useRef, useState } from "react";
+import { Suspense, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Stars, Sparkles, useTexture } from "@react-three/drei";
-import { Bloom, EffectComposer, Vignette } from "@react-three/postprocessing";
 import * as THREE from "three";
 
 type SceneCard = {
@@ -19,143 +17,111 @@ type OracleSceneProps = {
   flippingId: number | null;
 };
 
-function CardArtwork({ url }: { url: string }) {
-  const texture = useTexture(url);
-  texture.colorSpace = THREE.SRGBColorSpace;
+const GOLD = "#c8a66b";
 
-  return (
-    <mesh position={[0, 0, 0.046]}>
-      <planeGeometry args={[0.76, 1.16]} />
-      <meshBasicMaterial map={texture} toneMapped={false} />
-    </mesh>
-  );
-}
+function createCardTexture(symbol: string, title: string, isBack = false) {
+  const canvas = document.createElement("canvas");
+  canvas.width = 512;
+  canvas.height = 768;
 
-function GoldFrame() {
-  const gold = "#d7b66f";
+  const ctx = canvas.getContext("2d")!;
 
-  return (
-    <group position={[0, 0, 0.052]}>
-      <mesh position={[0, 0.65, 0]}>
-        <boxGeometry args={[0.82, 0.018, 0.014]} />
-        <meshStandardMaterial
-          color={gold}
-          metalness={0.9}
-          roughness={0.2}
-          emissive="#704717"
-          emissiveIntensity={0.35}
-        />
-      </mesh>
+  const gradient = ctx.createRadialGradient(256, 360, 30, 256, 360, 520);
+  gradient.addColorStop(0, "#30251d");
+  gradient.addColorStop(0.7, "#17110e");
+  gradient.addColorStop(1, "#090807");
 
-      <mesh position={[0, -0.65, 0]}>
-        <boxGeometry args={[0.82, 0.018, 0.014]} />
-        <meshStandardMaterial
-          color={gold}
-          metalness={0.9}
-          roughness={0.2}
-          emissive="#704717"
-          emissiveIntensity={0.35}
-        />
-      </mesh>
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, 512, 768);
 
-      <mesh position={[-0.41, 0, 0]}>
-        <boxGeometry args={[0.018, 1.3, 0.014]} />
-        <meshStandardMaterial
-          color={gold}
-          metalness={0.9}
-          roughness={0.2}
-          emissive="#704717"
-          emissiveIntensity={0.35}
-        />
-      </mesh>
+  // Давхар алтан хүрээ
+  ctx.strokeStyle = "#b99a65";
+  ctx.lineWidth = 3;
+  ctx.strokeRect(20, 20, 472, 728);
 
-      <mesh position={[0.41, 0, 0]}>
-        <boxGeometry args={[0.018, 1.3, 0.014]} />
-        <meshStandardMaterial
-          color={gold}
-          metalness={0.9}
-          roughness={0.2}
-          emissive="#704717"
-          emissiveIntensity={0.35}
-        />
-      </mesh>
-    </group>
-  );
-}
+  ctx.strokeStyle = "#705735";
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(32, 32, 448, 704);
 
-function CardEmblem({ index }: { index: number }) {
-  const crystal = useRef<THREE.Group>(null);
-
-  useFrame((state, delta) => {
-    if (!crystal.current) return;
-
-    crystal.current.rotation.y += delta * 0.45;
-    crystal.current.rotation.x =
-      Math.sin(state.clock.elapsedTime * 0.7 + index) * 0.12;
+  // Булангийн чимэглэл
+  ctx.fillStyle = GOLD;
+  [
+    [42, 42],
+    [470, 42],
+    [42, 726],
+    [470, 726],
+  ].forEach(([x, y]) => {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(Math.PI / 4);
+    ctx.fillRect(-8, -8, 16, 16);
+    ctx.restore();
   });
 
-  return (
-    <group ref={crystal}>
-      <mesh>
-        <icosahedronGeometry args={[0.17, 1]} />
-        <meshPhysicalMaterial
-          color="#d9b66d"
-          emissive="#8b521e"
-          emissiveIntensity={0.7}
-          metalness={0.8}
-          roughness={0.15}
-          clearcoat={1}
-        />
-      </mesh>
+  if (isBack) {
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
 
-      <mesh rotation={[0, 0, Math.PI / 4]}>
-        <torusGeometry args={[0.29, 0.009, 8, 64]} />
-        <meshBasicMaterial color="#e9c984" />
-      </mesh>
+    ctx.strokeStyle = "#b99a65";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(256, 384, 135, 0, Math.PI * 2);
+    ctx.stroke();
 
-      <mesh rotation={[Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[0.23, 0.008, 8, 64]} />
-        <meshBasicMaterial color="#9d72d6" />
-      </mesh>
-    </group>
-  );
-}
+    ctx.strokeStyle = "#705735";
+    ctx.beginPath();
+    ctx.arc(256, 384, 155, 0, Math.PI * 2);
+    ctx.stroke();
 
-function CardBack() {
-  return (
-    <group position={[0, 0, -0.052]} rotation={[0, Math.PI, 0]}>
-      <mesh>
-        <planeGeometry args={[0.82, 1.28]} />
-        <meshStandardMaterial color="#21132e" metalness={0.6} roughness={0.3} />
-      </mesh>
+    ctx.fillStyle = "#e4c78e";
+    ctx.font = "110px serif";
+    ctx.fillText("✧", 256, 390);
 
-      <mesh position={[0, 0, 0.008]}>
-        <torusGeometry args={[0.3, 0.012, 10, 64]} />
-        <meshStandardMaterial
-          color="#d8b778"
-          emissive="#855b28"
-          emissiveIntensity={0.8}
-          metalness={0.8}
-        />
-      </mesh>
+    ctx.fillStyle = "#b99a65";
+    ctx.font = "24px serif";
+    ctx.fillText("TENGER ATLS", 256, 100);
+  } else {
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
 
-      <mesh position={[0, 0, 0.012]}>
-        <octahedronGeometry args={[0.16, 1]} />
-        <meshStandardMaterial
-          color="#e5c784"
-          emissive="#9e5c31"
-          emissiveIntensity={0.8}
-          metalness={0.8}
-          roughness={0.15}
-        />
-      </mesh>
+    ctx.fillStyle = "#9e865e";
+    ctx.font = "22px serif";
+    ctx.letterSpacing = "9px";
+    ctx.fillText("TENGER ATLS", 256, 90);
 
-      <mesh position={[0, 0, 0.01]}>
-        <torusGeometry args={[0.43, 0.008, 8, 64]} />
-        <meshBasicMaterial color="#a98a58" />
-      </mesh>
-    </group>
-  );
+    ctx.strokeStyle = "#b99a65";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(256, 350, 145, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.strokeStyle = "#705735";
+    ctx.beginPath();
+    ctx.arc(256, 350, 125, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.fillStyle = "#e4c78e";
+    ctx.font = "150px serif";
+    ctx.fillText(symbol || "✧", 256, 365);
+
+    ctx.fillStyle = "#b99a65";
+    ctx.fillRect(190, 555, 132, 2);
+
+    ctx.fillStyle = "#e4d3b0";
+    ctx.font = "32px serif";
+    ctx.letterSpacing = "5px";
+    ctx.fillText((title || "THE ORACLE").toUpperCase(), 256, 615);
+
+    ctx.fillStyle = "#8f7955";
+    ctx.font = "19px serif";
+    ctx.fillText("THE ORACLE", 256, 675);
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 8;
+
+  return texture;
 }
 
 function OracleCard({
@@ -164,92 +130,84 @@ function OracleCard({
   position,
   active,
   onSelect,
-  compact,
 }: {
   card: SceneCard;
   index: number;
   position: [number, number, number];
   active: boolean;
   onSelect: () => void;
-  compact: boolean;
 }) {
   const group = useRef<THREE.Group>(null);
   const [hovered, setHovered] = useState(false);
 
-  const targetPosition = useRef(new THREE.Vector3());
-  const targetScale = useRef(new THREE.Vector3(1, 1, 1));
+  const home = useMemo(
+    () => new THREE.Vector3(...position),
+    [position[0], position[1], position[2]],
+  );
+
+  const target = useRef(new THREE.Vector3(...position));
+
+  const frontTexture = useMemo(
+    () => createCardTexture(card.symbol, card.title),
+    [card.symbol, card.title],
+  );
+
+  const backTexture = useMemo(() => createCardTexture("", "", true), []);
 
   useFrame((state, delta) => {
     if (!group.current) return;
 
-    const time = state.clock.elapsedTime;
+    const t = state.clock.elapsedTime;
 
-    if (active) {
-      targetPosition.current.set(0, 0, 3.3);
-      targetScale.current.setScalar(1.5);
-    } else {
-      targetPosition.current.set(
-        position[0] + Math.sin(time * 0.4 + index) * 0.035,
-        position[1] + Math.sin(time * 0.75 + index * 0.8) * 0.075,
-        position[2] + Math.sin(time * 0.5 + index) * 0.06,
-      );
+    target.current.set(
+      active ? 0 : home.x,
+      active ? 0 : home.y + Math.sin(t * 0.42 + index * 0.8) * 0.025,
+      active ? 2.6 : home.z,
+    );
 
-      const scale = hovered ? 1.12 : 1;
-      targetScale.current.setScalar(scale);
-    }
+    group.current.position.lerp(
+      target.current,
+      1 - Math.exp(-delta * (active ? 3 : 5)),
+    );
 
-    const speed = 1 - Math.exp(-delta * (active ? 3.5 : 5.5));
+    const scale = active ? 1.55 : hovered ? 1.055 : 1;
 
-    group.current.position.lerp(targetPosition.current, speed);
-    group.current.scale.lerp(targetScale.current, speed);
+    group.current.scale.lerp(
+      new THREE.Vector3(scale, scale, scale),
+      1 - Math.exp(-delta * 5),
+    );
 
-    const rotationY = active
+    const targetY = active
       ? Math.PI
       : hovered
-        ? -0.18
-        : Math.sin(time * 0.5 + index) * 0.045;
+        ? -0.08
+        : Math.sin(t * 0.25 + index) * 0.012;
 
     group.current.rotation.y = THREE.MathUtils.damp(
       group.current.rotation.y,
-      rotationY,
-      active ? 3.3 : 4,
-      delta,
-    );
-
-    const rotationX = active
-      ? 0
-      : hovered
-        ? 0.1
-        : Math.sin(time * 0.65 + index) * 0.035;
-
-    group.current.rotation.x = THREE.MathUtils.damp(
-      group.current.rotation.x,
-      rotationX,
+      targetY,
       4,
       delta,
     );
 
-    group.current.rotation.z = THREE.MathUtils.damp(
-      group.current.rotation.z,
-      hovered ? 0.04 : 0,
+    group.current.rotation.x = THREE.MathUtils.damp(
+      group.current.rotation.x,
+      active ? 0 : -0.025,
       4,
       delta,
     );
   });
 
-  const cardWidth = compact ? 0.78 : 0.9;
-  const cardHeight = compact ? 1.17 : 1.35;
-
   return (
     <group
       ref={group}
       position={position}
-      onClick={(e) => {
-        e.stopPropagation();
+      onClick={(event) => {
+        event.stopPropagation();
         onSelect();
       }}
-      onPointerOver={(e) => {
-        e.stopPropagation();
+      onPointerOver={(event) => {
+        event.stopPropagation();
         setHovered(true);
         document.body.style.cursor = "pointer";
       }}
@@ -258,242 +216,145 @@ function OracleCard({
         document.body.style.cursor = "default";
       }}
     >
+      {/* Картын үндсэн их бие */}
       <mesh castShadow receiveShadow>
-        <boxGeometry args={[cardWidth, cardHeight, 0.08]} />
-        <meshPhysicalMaterial
-          color="#21152d"
-          metalness={0.72}
-          roughness={0.24}
-          clearcoat={1}
-          clearcoatRoughness={0.12}
+        <boxGeometry args={[1.48, 2.18, 0.105]} />
+        <meshStandardMaterial
+          color="#17120f"
+          metalness={0.48}
+          roughness={0.38}
         />
       </mesh>
 
-      <GoldFrame />
+      {/* Картын нүүр */}
+      <mesh position={[0, 0, 0.055]}>
+        <planeGeometry args={[1.4, 2.1]} />
+        <meshBasicMaterial map={frontTexture} toneMapped={false} />
+      </mesh>
 
-      {card.cover ? (
-        <CardArtwork url={card.cover} />
-      ) : (
-        <group position={[0, 0, 0.065]}>
-          <CardEmblem index={index} />
-        </group>
+      {/* Картын ар тал */}
+      <mesh position={[0, 0, -0.055]} rotation={[0, Math.PI, 0]}>
+        <planeGeometry args={[1.4, 2.1]} />
+        <meshBasicMaterial map={backTexture} toneMapped={false} />
+      </mesh>
+
+      {/* Hover гэрэл */}
+      {hovered && (
+        <pointLight
+          position={[0, 0, 0.6]}
+          color="#d8bd88"
+          intensity={0.45}
+          distance={2.5}
+        />
       )}
-
-      <CardBack />
-
-      <Sparkles
-        count={hovered || active ? 26 : 5}
-        scale={[1.15, 1.4, 0.25]}
-        size={2.4}
-        speed={0.35}
-        opacity={0.8}
-        color="#edca83"
-      />
-
-      <pointLight
-        position={[0, 0, 0.25]}
-        intensity={hovered || active ? 2.2 : 0.25}
-        color="#d6a75c"
-        distance={2.3}
-      />
-    </group>
-  );
-}
-
-function Portal() {
-  const portal = useRef<THREE.Group>(null);
-
-  useFrame((state) => {
-    if (!portal.current) return;
-
-    portal.current.rotation.z =
-      Math.sin(state.clock.elapsedTime * 0.12) * 0.025;
-
-    portal.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.09) * 0.04;
-  });
-
-  return (
-    <group ref={portal} position={[0, 0, -3.5]}>
-      <mesh>
-        <torusGeometry args={[4.2, 0.022, 16, 160]} />
-        <meshBasicMaterial color="#b88b4d" transparent opacity={0.5} />
-      </mesh>
-
-      <mesh rotation={[0, 0, Math.PI / 2]}>
-        <torusGeometry args={[3.85, 0.012, 12, 160]} />
-        <meshBasicMaterial color="#72529b" transparent opacity={0.48} />
-      </mesh>
-
-      <mesh rotation={[0, 0, Math.PI / 4]}>
-        <torusGeometry args={[3.55, 0.008, 12, 160]} />
-        <meshBasicMaterial color="#e7c17a" transparent opacity={0.3} />
-      </mesh>
     </group>
   );
 }
 
 function CameraRig() {
-  useFrame((state, delta) => {
-    const targetX = state.pointer.x * 0.55;
-    const targetY = state.pointer.y * 0.35;
+  const { camera, pointer } = useThree();
 
-    state.camera.position.x = THREE.MathUtils.damp(
-      state.camera.position.x,
-      targetX,
-      2,
+  useFrame((_, delta) => {
+    camera.position.x = THREE.MathUtils.damp(
+      camera.position.x,
+      pointer.x * 0.18,
+      1.5,
       delta,
     );
 
-    state.camera.position.y = THREE.MathUtils.damp(
-      state.camera.position.y,
-      targetY,
-      2,
+    camera.position.y = THREE.MathUtils.damp(
+      camera.position.y,
+      pointer.y * 0.1,
+      1.5,
       delta,
     );
 
-    state.camera.lookAt(0, 0, 0);
+    camera.lookAt(0, 0, 0);
   });
 
   return null;
 }
 
-function OracleWorld({ cards, onSelect, flippingId }: OracleSceneProps) {
+function Scene({ cards, onSelect, flippingId }: OracleSceneProps) {
   const { size } = useThree();
-  const compact = size.width < 700;
 
-  const columns = compact ? 3 : 4;
+  const mobile = size.width < 680;
+  const columns = mobile ? 3 : 4;
   const rows = Math.ceil(cards.length / columns);
 
-  const spacingX = compact ? 1.32 : 1.8;
-  const spacingY = compact ? 1.48 : 1.82;
+  const gapX = mobile ? 1.55 : 2.05;
+  const gapY = mobile ? 1.95 : 2.48;
 
   return (
     <>
       <color attach="background" args={["#0a0812"]} />
+      <fog attach="fog" args={["#0a0812", 17, 32]} />
 
-      <ambientLight intensity={0.55} />
+      <ambientLight intensity={0.75} />
 
-      <directionalLight position={[0, 7, 8]} intensity={2.2} color="#ffe4b6" />
-
-      <pointLight
-        position={[-5, 2, 4]}
-        intensity={45}
-        color="#914cff"
-        distance={16}
-      />
+      <directionalLight position={[-4, 6, 8]} intensity={1.8} color="#f1dfbd" />
 
       <pointLight
-        position={[5, -2, 5]}
-        intensity={38}
-        color="#e8ad55"
+        position={[0, 0, -4]}
+        intensity={9}
+        color="#8b6b42"
         distance={15}
       />
 
-      <spotLight
-        position={[0, 5, 7]}
-        angle={0.8}
-        penumbra={0.8}
-        intensity={35}
-        color="#fff0cf"
-        castShadow
-      />
-
-      <Stars
-        radius={45}
-        depth={45}
-        count={900}
-        factor={2.7}
-        saturation={0.3}
-        fade
-        speed={0.45}
-      />
-
-      <Sparkles
-        count={130}
-        scale={[15, 9, 5]}
-        size={2.6}
-        speed={0.3}
-        opacity={0.75}
-        color="#d8b16e"
-      />
-
-      <Portal />
       <CameraRig />
 
       {cards.map((card, index) => {
-        const column = index % columns;
+        const col = index % columns;
         const row = Math.floor(index / columns);
 
-        const x = (column - (columns - 1) / 2) * spacingX;
-        const y = ((rows - 1) / 2 - row) * spacingY;
-        const z = -Math.abs(column - (columns - 1) / 2) * 0.12;
+        const position: [number, number, number] = [
+          (col - (columns - 1) / 2) * gapX,
+          ((rows - 1) / 2 - row) * gapY,
+          0,
+        ];
 
         return (
           <OracleCard
             key={card.id}
             card={card}
             index={index}
-            position={[x, y, z]}
+            position={position}
             active={flippingId === card.id}
             onSelect={() => onSelect(card.id)}
-            compact={compact}
           />
         );
       })}
-
-      <EffectComposer>
-        <Bloom
-          intensity={1.35}
-          luminanceThreshold={0.2}
-          luminanceSmoothing={0.85}
-          mipmapBlur
-        />
-        <Vignette eskil={false} offset={0.22} darkness={0.8} />
-      </EffectComposer>
     </>
   );
 }
 
-export default function OracleScene({
-  cards,
-  onSelect,
-  flippingId,
-}: OracleSceneProps) {
+export default function OracleScene(props: OracleSceneProps) {
   return (
-    <div
-      className="relative h-[780px] w-full overflow-hidden rounded-3xl border border-[#a88650]/20 md:h-[660px]"
-      style={{
-        background:
-          "radial-gradient(ellipse at center, #21132e 0%, #100b19 55%, #080710 100%)",
-      }}
-    >
-      <div className="pointer-events-none absolute left-1/2 top-1/2 h-96 w-96 -translate-x-1/2 -translate-y-1/2 rounded-full bg-purple-700/10 blur-[110px]" />
+    <div className="relative h-[900px] w-full overflow-hidden bg-[#0a0812] sm:h-[820px] lg:h-[760px]">
+      <div className="pointer-events-none absolute inset-0 z-10 bg-[radial-gradient(ellipse_at_50%_45%,rgba(153,113,65,0.10)_0%,rgba(10,8,18,0)_42%,rgba(10,8,18,0.35)_100%)]" />
 
       <Suspense
         fallback={
-          <div className="flex h-full items-center justify-center text-sm tracking-[0.3em] text-[#c7a66d]">
-            TENGER ATLS · LOADING
+          <div className="flex h-full items-center justify-center text-xs tracking-[0.35em] text-[#b99a65]">
+            TENGER ATLS
           </div>
         }
       >
         <Canvas
-          camera={{ position: [0, 0, 12], fov: 42 }}
+          camera={{ position: [0, 0, 11.8], fov: 42 }}
           dpr={[1, 1.5]}
+          shadows
           gl={{
             antialias: true,
             alpha: false,
             powerPreference: "high-performance",
           }}
         >
-          <OracleWorld
-            cards={cards}
-            onSelect={onSelect}
-            flippingId={flippingId}
-          />
+          <Scene {...props} />
         </Canvas>
       </Suspense>
 
-      <div className="pointer-events-none absolute bottom-5 left-0 right-0 text-center text-[9px] tracking-[0.4em] text-[#c0a276]/60">
+      <div className="pointer-events-none absolute bottom-5 left-0 right-0 z-20 text-center text-[9px] tracking-[0.42em] text-[#9c8156]">
         CHOOSE YOUR DESTINY
       </div>
     </div>

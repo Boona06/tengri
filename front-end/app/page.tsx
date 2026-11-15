@@ -134,10 +134,18 @@ export default function Home() {
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
   const [paymentCard, setPaymentCard] = useState<Card | null>(null);
   const [flippingId, setFlippingId] = useState<number | null>(null);
+
   const selectingRef = useRef(false);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     setCards((current) => shuffleCards(current));
+
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
   }, []);
 
   function chooseCard(card: Card) {
@@ -146,7 +154,7 @@ export default function Home() {
     selectingRef.current = true;
     setFlippingId(card.id);
 
-    window.setTimeout(() => {
+    timeoutRef.current = setTimeout(() => {
       if (openedIds.includes(card.id)) {
         setSelectedCard(card);
       } else if (openedIds.length === 0) {
@@ -168,11 +176,13 @@ export default function Home() {
 
   return (
     <main className="min-h-screen overflow-hidden bg-[#0a0812] text-[#f4ead8]">
+      {/* HEADER */}
       <header className="mx-auto flex max-w-7xl items-center justify-between px-6 py-7">
         <div>
           <div className="text-xl font-semibold tracking-[0.3em] text-[#d9bd83]">
             TENGER ATLS
           </div>
+
           <div className="mt-1 text-[9px] tracking-[0.42em] text-[#887b99]">
             THE MYSTERY WITHIN
           </div>
@@ -189,6 +199,7 @@ export default function Home() {
         </div>
       </header>
 
+      {/* HERO SECTION */}
       <section className="relative mx-auto max-w-5xl px-6 pb-12 pt-16 text-center">
         <div className="absolute left-1/2 top-0 -z-0 h-72 w-72 -translate-x-1/2 rounded-full bg-[#683b91]/15 blur-[100px]" />
 
@@ -222,11 +233,13 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-5 pb-20">
-        <div className="mb-8 flex items-center justify-between">
+      {/* CARDS SECTION */}
+      <section className="mx-auto max-w-7xl px-5 pb-20">
+        <div className="mx-auto mb-8 flex max-w-6xl items-center justify-between">
           <p className="text-xs tracking-[0.25em] text-[#9c8aa7]">
-            THE TWELVE MYSTERIES
+            
           </p>
+
           <p className="text-xs text-[#b49a6f]">
             {openedIds.length === 0
               ? "Эхний карт үнэгүй"
@@ -234,7 +247,8 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-6 lg:grid-cols-4">
+        {/* 3D КАРТУУД - GRID WRAPPER-ИЙГ АВСАН */}
+        <div className="w-full">
           <OracleScene
             cards={cards}
             flippingId={flippingId}
@@ -250,6 +264,7 @@ export default function Home() {
 
         <div className="mt-12 text-center">
           <div className="mb-4 text-xl text-[#c5a36e]">✧</div>
+
           <p className="text-xs tracking-[0.25em] text-[#95849f]">
             {openedIds.length === 0
               ? "ТАНЫ ЗӨН СОВИНГОО ДАГА"
@@ -258,13 +273,16 @@ export default function Home() {
         </div>
       </section>
 
+      {/* FOOTER */}
       <footer className="border-t border-[#8e754c]/20 px-6 py-8 text-center">
         <p className="text-xs tracking-[0.3em] text-[#9d8969]">TENGER ATLS</p>
+
         <p className="mt-3 text-[10px] text-[#71657d]">
           Өөрийгөө таних аялал эндээс эхэлнэ.
         </p>
       </footer>
 
+      {/* FREE CARD RESULT MODAL */}
       {selectedCard && (
         <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/85 p-5 backdrop-blur-md">
           <div className="relative my-auto w-full max-w-lg rounded-2xl border border-[#c6a46e]/50 bg-[#160f20] p-8 text-center shadow-2xl sm:p-12">
@@ -300,6 +318,7 @@ export default function Home() {
         </div>
       )}
 
+      {/* PAYMENT MODAL */}
       {paymentCard && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-5 backdrop-blur-md">
           <div className="w-full max-w-sm rounded-2xl border border-[#c6a46e]/50 bg-[#160f20] p-8 text-center">
