@@ -2,317 +2,157 @@
 
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
+import Modal from "../components/Modal";
+import TarotFace from "../components/TarotFace";
+import { FLIP_DURATION_MS, parseAnswer, parseCards, shuffle, type Answer, type Card } from "../lib/cards";
+import { useReducedMotion } from "../lib/use-reduced-motion";
 
 const OracleScene = dynamic(() => import("../components/OracleScene"), {
   ssr: false,
+  loading: () => <p role="status" className="py-16 text-center text-[#bca582]">Картуудыг бэлтгэж байна…</p>,
 });
-
-type Card = {
-  id: number;
-  symbol: string;
-  title: string;
-  question: string;
-  answer: string;
-  cover?: string;
-};
-
-const initialCards: Card[] = [
-  {
-    id: 1,
-    symbol: "☀",
-    title: "Нар",
-    question: "Таны амьдралд ойрын үед ямар шинэ боломж ирэх вэ?",
-    answer:
-      "Таны өмнө шинэ эхлэл нээгдэж байна. Удаан хугацаанд хүлээсэн боломж тань ойртож байгаа бөгөөд өөртөө итгэлтэй алхам хийх цаг болжээ.",
-    cover: "/cards/card-01.jpg",
-  },
-  {
-    id: 2,
-    symbol: "☾",
-    title: "Сар",
-    question: "Таны дотор нуугдаж буй хамгийн том хүсэл юу вэ?",
-    answer:
-      "Таны сэтгэлд удаан хадгалагдсан нэгэн хүсэл байна. Түүнийг үл тоомсорлохын оронд өөрийнхөө жинхэнэ хүсэл юу болохыг тунгаагаарай.",
-    cover: "/cards/card-02.jpg",
-  },
-  {
-    id: 3,
-    symbol: "♡",
-    title: "Хайр",
-    question: "Хайр дурлалын талбарт таныг юу хүлээж байна вэ?",
-    answer:
-      "Сэтгэлийн холбоо улам гүнзгийрэх боломж байна. Гэхдээ бусдаас хүсэх хайраа өөртөө ч бас өгөхөө бүү мартаарай.",
-    cover: "/cards/card-01.jpg",
-  },
-  {
-    id: 4,
-    symbol: "♛",
-    title: "Хаан",
-    question: "Таны ажил, карьерын дараагийн алхам юу байх вэ?",
-    answer:
-      "Таны ур чадвар, тууштай байдал үр дүнгээ өгөх үе ойртож байна. Өөрийн үнэ цэнийг мэдэрч, боломжийг зоригтой ашиглаарай.",
-    cover: "/cards/card-02.jpg",
-  },
-  {
-    id: 5,
-    symbol: "✧",
-    title: "Од",
-    question: "Таны ирээдүйн хамгийн гэгээлэг боломж юу вэ?",
-    answer:
-      "Таны өмнө итгэл найдвар төрүүлэх үйл явдал гарч ирнэ. Жижиг мэт санагдах боломжийг анзаараарай.",
-    cover: "/cards/card-01.jpg",
-  },
-  {
-    id: 6,
-    symbol: "♧",
-    title: "Аз",
-    question: "Мөнгө санхүүгийн тал дээр ямар өөрчлөлт ирэх вэ?",
-    answer:
-      "Санхүүгийн байдал тань илүү цэгцтэй болох боломжтой. Орлогоо нэмэгдүүлэхийн зэрэгцээ зарлагаа ухаалгаар төлөвлөөрэй.",
-    cover: "/cards/card-02.jpg",
-  },
-  {
-    id: 7,
-    symbol: "♧",
-    title: "Мод",
-    question: "Таны амьдралд юуг орхих цаг болсон бэ?",
-    answer:
-      "Танд цаашид хэрэггүй болсон хуучин бодол, дадал бий. Тэдгээрээс салж чадвал шинэ боломжид зай гарна.",
-    cover: "/cards/card-01.jpg",
-  },
-  {
-    id: 8,
-    symbol: "♜",
-    title: "Зам",
-    question: "Таныг ямар шинэ аялал, өөрчлөлт хүлээж байна вэ?",
-    answer:
-      "Таны хэвшсэн орчноос өөр шинэ зүйлтэй танилцах боломж гарч мэднэ. Өөрчлөлтөөс бүү ай.",
-    cover: "/cards/card-02.jpg",
-  },
-  {
-    id: 9,
-    symbol: "♢",
-    title: "Эрдэнэ",
-    question: "Таны хамгийн том авьяас юу вэ?",
-    answer:
-      "Таны өөрөө анзаараагүй нэгэн чадвар бий. Түүнийгээ хөгжүүлэхэд цаг гаргавал шинэ үр дүнг мэдрэх болно.",
-    cover: "/cards/card-01.jpg",
-  },
-  {
-    id: 10,
-    symbol: "∞",
-    title: "Хувь",
-    question: "Таны амьдралд ямар чухал уулзалт тохиох бол?",
-    answer:
-      "Шинэ танил эсвэл хуучин холбоо дахин сэргэх боломж байна. Хүмүүстэй харилцахдаа нээлттэй байгаарай.",
-    cover: "/cards/card-02.jpg",
-  },
-  {
-    id: 11,
-    symbol: "♨",
-    title: "Гал",
-    question: "Таныг хамгийн их өөрчлөх зүйл юу байх вэ?",
-    answer:
-      "Таны зориг гарган хийсэн нэг шийдвэр амьдралын тань чиглэлийг өөрчилж мэднэ. Яаралгүй бодож, өөртөө итгээрэй.",
-    cover: "/cards/card-01.jpg",
-  },
-  {
-    id: 12,
-    symbol: "✦",
-    title: "Тэнгэр",
-    question: "Таны хүсэл биелэхэд юу хамгийн их нөлөөлөх вэ?",
-    answer:
-      "Хүсэл мөрөөдөл тань зөвхөн хүлээлтээр биелэхгүй. Түүн рүү чиглэсэн жижиг боловч бодит алхмаа өнөөдрөөс эхлүүлээрэй.",
-    cover: "/cards/card-02.jpg",
-  },
-];
-
-// Сэдэв бүрт 2 нэмэлт хариулт.
-// Анхны хариулт нь initialCards дотор байгаа.
-
-const extraAnswers: Record<number, [string, string]> = {
-  1: [
-    "Ойрын үед танил орчноос тань шинэ боломж урган гарч мэднэ. Өмнө нь анзаараагүй жижиг санал, уулзалтад анхаарлаа хандуулаарай.",
-    "Таны өөрөө эхлүүлсэн нэгэн ажил шинэ хаалга нээж болох юм. Бусдын зөвшөөрлийг хүлээхийн оронд эхний алхмаа хийж үзээрэй.",
-  ],
-  2: [
-    "Таны сэтгэлд хэнд ч хэлээгүй нэгэн мөрөөдөл бий бололтой. Түүнийг бодит болгохын тулд юунаас эхлэхээ өөрөөсөө асуугаарай.",
-    "Та өөрийгөө сонсох завгүй явсан байж мэднэ. Нам гүмхэн үедээ үнэхээр хүсэж буй зүйлээ бичиж үзвэл хариулт тодорно.",
-  ],
-  3: [
-    "Ойлголцол хамгийн энгийн ярианаас эхэлдэг. Сэтгэлээ нуухын оронд тайван, үнэнээр нь илэрхийлэх үе иржээ.",
-    "Шинэ дотно холбоо үүсэх эсвэл хуучин харилцаа өөр өнгөөр харагдаж мэднэ. Гэхдээ өөрийн хил хязгаарыг мартаж болохгүй.",
-  ],
-  4: [
-    "Хийж чаддаг зүйлээ бусдад харуулах боломж ойртож байна. Зөв цагийг хүлээхээс илүү бэлтгэлээ өнөөдрөөс эхлүүлээрэй.",
-    "Ажил мэргэжлийн замд хоёр сонголт гарч мэднэ. Түр зуурын ашиг бус, урт хугацаанд өсөх боломжийг нь бодолцоорой.",
-  ],
-  5: [
-    "Танд урам өгөх мэдээ эсвэл хүнтэй учрах боломж бий. Тэр мөчийг хүлээхдээ өдөр тутмын жижиг баяр баяслыг ч анзаараарай.",
-    "Таны гэгээлэг боломж шинэ зүйл сурах, туршиж үзэхээс эхэлж магадгүй. Сониуч зангаа дагах зориг гаргаарай.",
-  ],
-  6: [
-    "Орлогоо нэмэгдүүлэхээс өмнө зарлагаа ажиглах нь танд илүү их эрх чөлөө өгөх боломжтой. Жижиг дүн ч хуримтлалын эхлэл болдог.",
-    "Санхүүгийн шинэ санал гарч ирж болох ч яарах хэрэггүй. Нөхцөлөө нягталж, бодит тооцоонд тулгуурлан шийдээрэй.",
-  ],
-  7: [
-    "Өөрийгөө байнга буруутгадаг бодлоо орхих цаг ирсэн байж мэднэ. Өнгөрсөн алдаанаас суралцаад цааш алхахад хангалттай.",
-    "Таны энергийг үргэлж шавхдаг нэгэн дадлыг өөрчлөх боломж бий. Өдөр бүр нэг жижиг өөрчлөлт хийхээс эхлээрэй.",
-  ],
-  8: [
-    "Шинэ газар бус, шинэ өнцгөөс харах нь ч аялал байж болно. Өдөр тутмын хэвшлээ бага зэрэг өөрчлөөд үзээрэй.",
-    "Төлөвлөөгүй нэгэн уулзалт эсвэл санал таны замыг сонирхолтой болгож мэднэ. Боломжийг нээлттэй хүлээж аваарай.",
-  ],
-  9: [
-    "Хүмүүсийн амархан анзаарахгүй нэгэн давуу тал танд бий. Өөртөө энгийн санагддаг зүйлээ бусдаас асууж үзээрэй.",
-    "Таны авьяас бүтээлч сэтгэлгээ эсвэл тэвчээртэй холбоотой байж мэднэ. Туршилт хийж, өөрийгөө шинэ орчинд сорьж үзээрэй.",
-  ],
-  10: [
-    "Таны бодлыг өөрчилж мэдэх яриа ойртож байна. Шинэ хүнтэй уулзахдаа урьдчилан дүгнэхгүй сонсоорой.",
-    "Хуучин танилтайгаа дахин холбогдох шалтгаан гарч магадгүй. Энэ удаад юу өөр болсныг ажиглаарай.",
-  ],
-  11: [
-    "Таныг өөрчлөх зүйл том үйл явдал биш, жижиг шийдвэрүүдийн нийлбэр байж болно. Өнөөдрийн сонголтоо анзаарч эхлээрэй.",
-    "Зоригтой алхам хийх боломж ойртож байгаа ч бэлтгэл чухал. Айдсаа үгүйсгэхийн оронд мэдээлэл цуглуулж, төлөвлөгөө гаргаарай.",
-  ],
-  12: [
-    "Хүсэл мөрөөдөлд тань тууштай байдал хамгийн их нөлөөлнө. Хийж чадах хамгийн жижиг алхмаа сонгоод давтаарай.",
-    "Таны хүсэл биелэх замд зөв хүмүүсийн дэмжлэг хэрэг болж мэднэ. Тусламж хүсэхээс бүү санаа зовоорой.",
-  ],
-};
-
-type RevealedCard = {
-  card: Card;
-  answer: string;
-};
-
-function shuffle<T>(items: T[]): T[] {
-  const result = [...items];
-
-  for (let i = result.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [result[i], result[j]] = [result[j], result[i]];
-  }
-
-  return result;
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+type RevealedCard = { card: Card; answer: Answer };
+function readableError(error: unknown, fallback: string) {
+  if (error instanceof Error && error.name === "TimeoutError") return "Сервер удаан хариулж байна. Дахин оролдоно уу.";
+  return error instanceof Error && /[А-Яа-яӨөҮү]/.test(error.message) ? error.message : fallback;
 }
 
-const hiddenSymbols = ["☾", "✦", "☼"];
-
 export default function Home() {
-  const [cards, setCards] = useState<Card[]>(initialCards);
-
-  const [openedAnswers, setOpenedAnswers] = useState<Record<number, string>>(
-    {},
-  );
-
+  const [cards, setCards] = useState<Card[]>([]);
+  const [openedAnswers, setOpenedAnswers] = useState<Record<string, Answer>>({});
   const [pickerCard, setPickerCard] = useState<Card | null>(null);
-  const [drawOptions, setDrawOptions] = useState<string[]>([]);
-
+  const [drawOptions, setDrawOptions] = useState<Answer[]>([]);
   const [revealingIndex, setRevealingIndex] = useState<number | null>(null);
-
   const [selectedCard, setSelectedCard] = useState<RevealedCard | null>(null);
-
   const [paymentCard, setPaymentCard] = useState<RevealedCard | null>(null);
-
-  const [flippingId, setFlippingId] = useState<number | null>(null);
-
-  const selectingRef = useRef(false);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
+  const [flippingId, setFlippingId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [reload, setReload] = useState(0);
+  const selecting = useRef(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const revealRequest = useRef<AbortController | null>(null);
+  const sequence = useRef(0);
+  const trigger = useRef<HTMLElement | null>(null);
+  const reduced = useReducedMotion();
   const openedCount = Object.keys(openedAnswers).length;
+  const modalOpen = !!(pickerCard || selectedCard || paymentCard);
 
   useEffect(() => {
-    setCards((current) => shuffle(current));
-
-    return () => {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
+    const controller = new AbortController();
+    async function load() {
+      setLoading(true);
+      setCards([]);
+      setError("");
+      try {
+        const response = await fetch(API_URL + "/api/contents", {
+          cache: "no-store", signal: AbortSignal.any([controller.signal, AbortSignal.timeout(15000)]),
+        });
+        const result = await response.json();
+        if (!response.ok || !result.success) throw new Error(result.message || "Контент уншиж чадсангүй.");
+        const nextCards = shuffle(parseCards(result.data));
+        if (!controller.signal.aborted) setCards(nextCards);
+      } catch (err) {
+        if (!controller.signal.aborted) setError(readableError(err, "Сервертэй холбогдож чадсангүй. Дахин оролдоно уу."));
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
       }
-
-      document.body.style.cursor = "default";
+    }
+    void load();
+    return () => {
+      controller.abort();
+      revealRequest.current?.abort();
+      // This is a request generation counter, not a DOM ref. Invalidate outstanding work.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      sequence.current++;
+      if (timer.current) clearTimeout(timer.current);
     };
-  }, []);
+  }, [reload]);
 
   function chooseTopic(card: Card) {
-    if (selectingRef.current || pickerCard || selectedCard || paymentCard) {
-      return;
-    }
-
-    // Нээсэн сэдвийн хариултыг дахин үзэх
+    if (selecting.current || modalOpen) return;
+    trigger.current = document.activeElement as HTMLElement;
+    setError("");
     if (openedAnswers[card.id]) {
-      setSelectedCard({
-        card,
-        answer: openedAnswers[card.id],
-      });
+      setSelectedCard({ card, answer: openedAnswers[card.id] });
       return;
     }
-
-    selectingRef.current = true;
+    selecting.current = true;
     setFlippingId(card.id);
-
-    // 3 өөр хариултыг санамсаргүй дарааллаар байрлуулах
-    setDrawOptions(shuffle([card.answer, ...extraAnswers[card.id]]));
-
-    timerRef.current = setTimeout(() => {
+    setDrawOptions(shuffle(card.answers));
+    timer.current = setTimeout(() => {
       setFlippingId(null);
       setPickerCard(card);
-      selectingRef.current = false;
-    }, 650);
+      selecting.current = false;
+    }, reduced ? 0 : FLIP_DURATION_MS);
   }
 
   function chooseHiddenCard(index: number) {
-    if (!pickerCard || revealingIndex !== null || selectingRef.current) {
-      return;
-    }
-
+    if (!pickerCard || revealingIndex !== null || selecting.current) return;
     const card = pickerCard;
-    const answer = drawOptions[index] ?? card.answer;
-
-    selectingRef.current = true;
+    const answer = drawOptions[index];
+    if (!answer) return;
+    selecting.current = true;
     setRevealingIndex(index);
-
-    timerRef.current = setTimeout(() => {
-      setPickerCard(null);
-      setRevealingIndex(null);
-      selectingRef.current = false;
-
-      if (Object.keys(openedAnswers).length === 0) {
-        // Эхний карт үнэгүй
-        setOpenedAnswers((current) => ({
-          ...current,
-          [card.id]: answer,
-        }));
-
-        setSelectedCard({ card, answer });
-      } else {
-        // Бусад карт QPay холбогдох хүртэл түгжээтэй
+    setError("");
+    const requestId = ++sequence.current;
+    timer.current = setTimeout(async () => {
+      if (requestId !== sequence.current) return;
+      if (openedCount > 0) {
+        setPickerCard(null);
+        setRevealingIndex(null);
+        selecting.current = false;
         setPaymentCard({ card, answer });
+        return;
       }
-    }, 550);
+      const controller = new AbortController();
+      revealRequest.current = controller;
+      try {
+        const response = await fetch(API_URL + "/api/contents/" + encodeURIComponent(card.id)
+          + "/answers/" + encodeURIComponent(answer.id) + "/reveal", {
+          method: "POST", signal: AbortSignal.any([controller.signal, AbortSignal.timeout(15000)]),
+        });
+        const result = await response.json();
+        if (controller.signal.aborted || requestId !== sequence.current) return;
+        if (response.status === 402) {
+          setPickerCard(null);
+          setPaymentCard({ card, answer });
+          return;
+        }
+        if (!response.ok || !result.success) throw new Error(result.message || "Хариулт уншиж чадсангүй.");
+        const revealed = parseAnswer(result.data, true);
+        if (revealed.id !== answer.id) throw new Error("Сонгосон картын мэдээлэл зөрсөн байна. Дахин оролдоно уу.");
+        setOpenedAnswers(current => ({ ...current, [card.id]: revealed }));
+        setPickerCard(null);
+        setSelectedCard({ card, answer: revealed });
+      } catch (err) {
+        if (!controller.signal.aborted && requestId === sequence.current) setError(readableError(err, "Хариулт уншиж чадсангүй. Дахин сонгоно уу."));
+      } finally {
+        if (!controller.signal.aborted && requestId === sequence.current) {
+          setRevealingIndex(null);
+          selecting.current = false;
+        }
+      }
+    }, reduced ? 0 : FLIP_DURATION_MS);
   }
 
   function closeModal() {
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-    }
-
-    selectingRef.current = false;
-
+    ++sequence.current;
+    revealRequest.current?.abort();
+    if (timer.current) clearTimeout(timer.current);
+    selecting.current = false;
+    setError("");
     setPickerCard(null);
     setRevealingIndex(null);
     setSelectedCard(null);
     setPaymentCard(null);
     setFlippingId(null);
-
-    document.body.style.cursor = "default";
+    const previous = trigger.current;
+    requestAnimationFrame(() => previous?.focus({ preventScroll: true }));
   }
 
-  return (
-    <main
-      id="home"
-      className="min-h-screen overflow-hidden bg-[#0a0812] text-[#f4ead8]"
-    >
+  return <main id="home" className="min-h-screen overflow-x-clip bg-[#0a0812] text-[#f4ead8]">
       {/* HEADER */}
       <header className="mx-auto flex max-w-7xl items-center justify-between px-4 py-5 sm:px-6 sm:py-7">
         <a href="#home" className="min-w-0">
@@ -321,7 +161,7 @@ export default function Home() {
           </div>
 
           <div className="mt-1 text-[8px] tracking-[0.3em] text-[#887b99] sm:text-[9px]">
-            THE MYSTERY WITHIN
+            ДОТООД ЕРТӨНЦИЙН НУУЦ
           </div>
         </a>
 
@@ -375,229 +215,58 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 12 СЭДЭВ */}
-      <section
-        id="cards"
-        className="mx-auto max-w-7xl px-3 pb-12 sm:px-5 sm:pb-20"
-      >
-        <div className="mx-auto mb-3 flex max-w-6xl items-center justify-between gap-3 px-2 sm:mb-6">
-          <p className="text-[10px] tracking-[0.16em] text-[#9c8aa7] sm:text-xs sm:tracking-[0.25em]">
-            12 НУУЦ СЭДЭВ
-          </p>
 
-          <p className="text-right text-[11px] text-[#b49a6f] sm:text-xs">
-            {openedCount === 0
-              ? "Эхний карт үнэгүй"
-              : "Дараагийн карт · 3,000₮"}
-          </p>
-        </div>
-
-        <OracleScene
-          cards={cards}
-          flippingId={flippingId}
-          onSelect={(id) => {
-            const card = cards.find((item) => item.id === id);
-
-            if (card) {
-              chooseTopic(card);
-            }
-          }}
-        />
-
-        <div className="mt-7 text-center sm:mt-12">
-          <div className="mb-3 text-xl text-[#c5a36e]">✧</div>
-
-          <p className="text-[10px] tracking-[0.18em] text-[#95849f] sm:text-xs sm:tracking-[0.25em]">
-            ЗӨН СОВИНГОО ДАГААРАЙ
-          </p>
-        </div>
-      </section>
-
-      {/* FOOTER */}
-      <footer
-        id="about"
-        className="border-t border-[#8e754c]/20 px-6 py-8 text-center"
-      >
-        <p className="text-xs tracking-[0.3em] text-[#9d8969]">TENGER ATLS</p>
-
-        <p className="mt-3 text-[10px] text-[#71657d]">
-          Өөрийгөө таних аялал эндээс эхэлнэ.
-        </p>
-      </footer>
-
-      {/* 3 НУУЦ КАРТ СОНГОХ ЦОНХ */}
-      {pickerCard && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-[#05040b]/90 px-4 py-6 backdrop-blur-xl">
-          <div className="flex min-h-full items-center justify-center">
-            <div className="relative w-full max-w-xl rounded-2xl border border-[#b69561]/35 bg-[radial-gradient(ellipse_at_top,#241b23_0%,#100c16_75%)] px-4 py-8 text-center shadow-2xl sm:px-9 sm:py-11">
-              <button
-                type="button"
-                onClick={closeModal}
-                aria-label="Хаах"
-                className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full border border-[#b69561]/30 text-xl text-[#cab68d] hover:bg-white/10"
-              >
-                ×
-              </button>
-
-              <div className="mb-3 text-xl text-[#c6a570]">✧</div>
-
-              <p className="text-[10px] uppercase tracking-[0.24em] text-[#a9947b] sm:text-xs">
-                {pickerCard.title}
-              </p>
-
-              <h2 className="mx-auto mt-3 max-w-md text-xl font-light leading-8 text-[#f0e0c4] sm:text-2xl">
-                3 нууц картаас нэгийг сонго
-              </h2>
-
-              <p className="mt-3 text-xs leading-6 text-[#a99eab] sm:text-sm">
-                Бүх картын ард өөр өөр хариулт нуугдаж байна.
-              </p>
-
-              <div className="mx-auto mt-8 grid max-w-[475px] grid-cols-3 gap-2.5 sm:gap-5">
-                {hiddenSymbols.map((symbol, index) => (
-                  <button
-                    key={index}
-                    type="button"
-                    aria-label={`Нууц карт ${index + 1} сонгох`}
-                    disabled={revealingIndex !== null}
-                    onClick={() => chooseHiddenCard(index)}
-                    className={`group relative aspect-[2/3] w-full touch-manipulation overflow-hidden rounded-lg border border-[#bc9962]/80 bg-[radial-gradient(ellipse_at_50%_40%,#37271f_0%,#1a1214_57%,#0c0a0f_100%)] shadow-[0_14px_38px_rgba(0,0,0,0.5)] transition-transform duration-500 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#d5b57e] ${
-                      revealingIndex === index
-                        ? "-translate-y-3 scale-[1.08] ring-2 ring-[#e0be7b]/60"
-                        : "hover:-translate-y-2 hover:shadow-[0_22px_42px_rgba(195,153,90,0.14)] active:-translate-y-1"
-                    }`}
-                  >
-                    <span className="pointer-events-none absolute inset-[5px] rounded-[5px] border border-[#c6a46e]/70 sm:inset-[8px]" />
-
-                    <span className="pointer-events-none absolute inset-[10px] rounded-[3px] border border-[#8e7248]/50 sm:inset-[15px]" />
-
-                    <span className="pointer-events-none absolute left-1/2 top-1/2 flex aspect-square w-[68%] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-[#b99a65]/70">
-                      <span className="flex h-[78%] w-[78%] items-center justify-center rounded-full border border-[#856b46]/70 text-[clamp(26px,8vw,52px)] font-light text-[#dfc18a] sm:text-6xl">
-                        {symbol}
-                      </span>
-                    </span>
-
-                    <span className="pointer-events-none absolute left-[13%] top-[9%] h-1 w-1 rotate-45 bg-[#d5b57e]" />
-                    <span className="pointer-events-none absolute right-[13%] top-[9%] h-1 w-1 rotate-45 bg-[#d5b57e]" />
-                    <span className="pointer-events-none absolute bottom-[9%] left-[13%] h-1 w-1 rotate-45 bg-[#d5b57e]" />
-                    <span className="pointer-events-none absolute bottom-[9%] right-[13%] h-1 w-1 rotate-45 bg-[#d5b57e]" />
-                  </button>
-                ))}
-              </div>
-
-              <p className="mt-7 text-[10px] tracking-[0.16em] text-[#a48e75] sm:text-xs">
-                КАРТЫН НҮҮРЭН ДЭЭР ДАРЖ СОНГООРОЙ
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* СОНГОСОН КАРТЫН ХАРИУЛТ */}
-      {selectedCard && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-[#05040b]/90 px-4 py-6 backdrop-blur-xl">
-          <div className="flex min-h-full items-center justify-center">
-            <div className="relative w-full max-w-lg rounded-2xl border border-[#c6a46e]/45 bg-[radial-gradient(ellipse_at_top,#291e2b_0%,#150f1f_78%)] px-6 py-9 text-center shadow-2xl sm:p-12">
-              <button
-                type="button"
-                onClick={closeModal}
-                aria-label="Хаах"
-                className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full border border-[#b69561]/30 text-xl text-[#cab68d] hover:bg-white/10"
-              >
-                ×
-              </button>
-
-              <div className="mb-5 text-4xl text-[#d7b77b]">
-                {selectedCard.card.symbol}
-              </div>
-
-              <p className="mb-4 text-[10px] tracking-[0.3em] text-[#bda170] sm:text-xs">
-                ТАНЫ ХАРИУЛТ
-              </p>
-
-              <h2 className="text-2xl font-light text-[#e8d5b3] sm:text-3xl">
-                {selectedCard.card.title}
-              </h2>
-
-              <div className="mx-auto my-6 h-px w-20 bg-[#b99763]" />
-
-              <h3 className="text-[15px] leading-7 text-[#f0e4d0] sm:text-base sm:leading-8">
-                {selectedCard.card.question}
-              </h3>
-
-              <p className="mt-6 text-sm leading-7 text-[#c6b8ca] sm:leading-8">
-                {selectedCard.answer}
-              </p>
-
-              <button
-                type="button"
-                onClick={closeModal}
-                className="mt-9 w-full rounded-full border border-[#c3a16e]/70 px-6 py-3 text-xs tracking-[0.15em] text-[#dfc48e] transition hover:bg-[#c3a16e] hover:text-[#160f20] sm:w-auto sm:px-9"
-              >
-                БУСАД КАРТ РУУ БУЦАХ
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* QPAY ТӨЛБӨРИЙН ЦОНХ */}
-      {paymentCard && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-[#05040b]/90 px-4 py-6 backdrop-blur-xl">
-          <div className="flex min-h-full items-center justify-center">
-            <div className="relative w-full max-w-sm rounded-2xl border border-[#c6a46e]/50 bg-[#160f20] p-7 text-center sm:p-9">
-              <button
-                type="button"
-                onClick={closeModal}
-                aria-label="Хаах"
-                className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full border border-[#b69561]/30 text-xl text-[#cab68d] hover:bg-white/10"
-              >
-                ×
-              </button>
-
-              <div className="mb-5 text-4xl text-[#d7b77b]">
-                {paymentCard.card.symbol}
-              </div>
-
-              <p className="text-xs tracking-[0.3em] text-[#bda170]">
-                НУУЦЫГ ТАЙЛАХ
-              </p>
-
-              <h2 className="mt-4 text-xl text-[#e8d5b3]">
-                {paymentCard.card.title}
-              </h2>
-
-              <p className="mt-4 text-sm leading-7 text-[#b9aabd]">
-                Сонгосон картынхаа хариултыг нээхийн тулд төлбөрөө төлнө үү.
-              </p>
-
-              <div className="my-7 text-3xl font-light text-[#e2c28a]">
-                3,000₮
-              </div>
-
-              <p className="mb-6 text-xs leading-6 text-[#a396a9]">
-                QPay хараахан холбогдоогүй тул одоогоор бодит төлбөр авахгүй.
-              </p>
-
-              <button
-                type="button"
-                disabled
-                className="w-full cursor-not-allowed rounded-full bg-[#786342]/40 py-3 text-xs tracking-widest text-[#b5a080]"
-              >
-                QPAY УДАХГҮЙ
-              </button>
-
-              <button
-                type="button"
-                onClick={closeModal}
-                className="mt-5 text-xs text-[#a899ae] hover:text-white"
-              >
-                Буцах
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </main>
-  );
+    <section id="cards" aria-label="Карт сонгох" className="mx-auto max-w-7xl px-3 pb-12 sm:px-5 sm:pb-20">
+      <div className="mx-auto mb-6 flex max-w-5xl items-center justify-between gap-3 px-2">
+        <p className="text-[10px] tracking-[0.16em] text-[#9c8aa7] sm:text-xs">{cards.length} НУУЦ СЭДЭВ / АСУУЛТ</p>
+        <p className="text-right text-xs text-[#b49a6f]">{openedCount === 0 ? "Эхний карт үнэгүй" : "Дараагийн карт · 3,000₮"}</p>
+      </div>
+      {loading && <div role="status" className="oracle-loading"><span aria-hidden="true">✧</span><p>Картуудыг уншиж байна…</p></div>}
+      {!modalOpen && error && <div role="alert" className="py-8 text-center text-sm text-[#dfc48e]">
+        <p>{error}</p><button type="button" disabled={loading} onClick={() => setReload(value => value + 1)} className="oracle-button mt-4">Дахин ачаалах</button>
+      </div>}
+      {!loading && !error && cards.length === 0 && <p role="status" className="py-16 text-center text-sm text-[#a99dad]">Одоогоор нийтэлсэн карт алга байна. Удахгүй дахин зочлоорой.</p>}
+      {!loading && cards.length > 0 && <OracleScene cards={cards} flippingId={flippingId}
+        disabled={!!flippingId || modalOpen} paused={modalOpen} onSelect={id => { const card = cards.find(item => item.id === id); if (card) chooseTopic(card); }} />}
+      <p className="mt-8 text-center text-xs tracking-[0.2em] text-[#b49a6f]">ЗӨН СОВИНГОО ДАГААРАЙ</p>
+    </section>
+    <footer id="about" className="border-t border-[#8e754c]/20 px-6 py-8 text-center">
+      <p className="text-xs tracking-[0.3em] text-[#9d8969]">TENGER ATLS</p>
+      <p className="mx-auto mt-3 max-w-xl text-xs leading-6 text-[#a99dad]">Насанд хүрэгчдэд зориулсан зөгнөлт тайлбар, өөрийгөө эргэцүүлэх аялал. Эдгээр тайлбар нь бодит үйл явдлын баталгаа, мэргэжлийн зөвлөгөө биш.</p>
+    </footer>
+    {pickerCard && <Modal key="picker" title="Гурван хариултаас сонгох" onClose={closeModal}>
+      <p className="eyebrow">{pickerCard.type === "TOPIC" ? "СЭДЭВ" : "АСУУЛТ"}</p>
+      <h2 className="mt-3 text-xl text-[#e8d5b3]">{pickerCard.title}</h2>
+      {pickerCard.question && <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-[#c6b8ca]">{pickerCard.question}</p>}
+      <h3 className="mt-5 text-xl text-[#f0e0c4]">Гурван нууц картаас нэгийг сонго</h3>
+      <p className="mt-3 text-xs leading-6 text-[#a99dad]">Карт бүр өөрийн хариулттай. Зөн совингоо дагаарай.</p>
+      <div className="mx-auto mt-8 grid max-w-[475px] grid-cols-3 gap-3 sm:gap-5">
+        {drawOptions.map((answer, index) => <button key={answer.id} type="button" aria-label={"Нууц карт " + (index + 1) + " сонгох"}
+          aria-busy={revealingIndex === index} disabled={revealingIndex !== null} onClick={() => chooseHiddenCard(index)}
+          className={"answer-choice " + (revealingIndex === index ? "is-flipping" : "")}>
+          <span className="flat-flip"><span className="flat-front"><TarotFace image={answer.imageUrl} symbol={answer.iconName} title={"Сонголт " + (index + 1)} /></span>
+          <span className="flat-back"><TarotFace image={answer.backImageUrl} symbol={answer.iconName} title={"Сонголт " + (index + 1)} back /></span></span>
+        </button>)}
+      </div>
+      {revealingIndex !== null && <p role="status" className="mt-5 text-sm text-[#dfc48e]">Хариултыг нээж байна…</p>}
+      {error && <p role="alert" className="mt-5 text-sm text-red-300">{error}</p>}
+    </Modal>}
+    {selectedCard && <Modal key="answer" title="Таны хариулт" onClose={closeModal}>
+      <div className="mx-auto mb-6 aspect-[2/3] w-28 sm:w-32"><TarotFace image={selectedCard.answer.imageUrl} symbol={selectedCard.answer.iconName} title={selectedCard.card.title} /></div>
+      <p className="eyebrow">ТАНЫ ХАРИУЛТ</p>
+      <h2 className="mt-4 text-2xl text-[#e8d5b3]">{selectedCard.card.title}</h2>
+      {selectedCard.card.question && <h3 className="mt-6 whitespace-pre-wrap text-base leading-8 text-[#f0e4d0]">{selectedCard.card.question}</h3>}
+      <p className="mt-6 whitespace-pre-wrap text-left text-base leading-8 text-[#c6b8ca]">{selectedCard.answer.text}</p>
+      <button type="button" onClick={closeModal} className="oracle-button mt-8">Бусад карт руу буцах</button>
+    </Modal>}
+    {paymentCard && <Modal key="payment" title="Картын төлбөр" onClose={closeModal}>
+      <p className="eyebrow">НУУЦЫГ ТАЙЛАХ</p>
+      <h2 className="mt-4 text-xl text-[#e8d5b3]">{paymentCard.card.title}</h2>
+      <p className="mt-4 text-sm leading-7 text-[#b9aabd]">Энэ картын хариултыг нээхэд төлбөр шаардлагатай.</p>
+      <p className="my-7 text-3xl text-[#e2c28a]">3,000₮</p>
+      <p role="status" className="mb-6 text-sm leading-6 text-[#a396a9]">QPay хараахан холбогдоогүй тул одоогоор төлбөр авахгүй, төлбөртэй хариулт нээхгүй.</p>
+      <button type="button" disabled className="oracle-button w-full">QPay удахгүй</button>
+      <button type="button" onClick={closeModal} className="oracle-button mt-5">Буцах</button>
+    </Modal>}
+  </main>;
 }

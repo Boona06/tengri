@@ -1,23 +1,22 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
-import { Canvas, useFrame, useLoader, useThree } from "@react-three/fiber";
+import { Component, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Canvas, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
+import { cardLayout, FLIP_DURATION_MS, type Card } from "../lib/cards";
+import { useReducedMotion } from "../lib/use-reduced-motion";
+import TarotFace from "./TarotFace";
 
-type SceneCard = {
-  id: number;
-  symbol: string;
-  title: string;
-  cover?: string;
-};
-
+type SceneCard = Pick<Card, "id" | "symbol" | "title" | "cover" | "backCover">;
 type OracleSceneProps = {
   cards: SceneCard[];
-  onSelect: (id: number) => void;
-  flippingId: number | null;
+  onSelect: (id: string) => void;
+  flippingId: string | null;
+  disabled?: boolean;
+  paused?: boolean;
 };
 
-function createBackTexture() {
+function createBackTexture(symbol: string, title: string) {
   const canvas = document.createElement("canvas");
   canvas.width = 512;
   canvas.height = 768;
@@ -74,7 +73,7 @@ function createBackTexture() {
 
   ctx.fillStyle = "#e7ca90";
   ctx.font = "130px Georgia, serif";
-  ctx.fillText("✧", 256, 392);
+  ctx.fillText(symbol || title.slice(0, 1), 256, 392);
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
@@ -152,7 +151,7 @@ function createFallbackFrontTexture(symbol: string, title: string) {
 
   ctx.fillStyle = "#99815a";
   ctx.font = "19px Georgia, serif";
-  ctx.fillText("THE ORACLE", 256, 677);
+  ctx.fillText("ЗӨН СОВИНГОО ДАГААРАЙ", 256, 677);
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
@@ -161,293 +160,118 @@ function createFallbackFrontTexture(symbol: string, title: string) {
   return texture;
 }
 
-function CardFront({ card }: { card: SceneCard }) {
-  const imageTexture = card.cover
-    ? useLoader(THREE.TextureLoader, card.cover)
-    : null;
 
-  const fallbackTexture = useMemo(
-    () =>
-      !card.cover ? createFallbackFrontTexture(card.symbol, card.title) : null,
-    [card.cover, card.symbol, card.title],
-  );
-
+function CardFace({ image, symbol, title, back = false }: {
+  image?: string; symbol: string; title: string; back?: boolean;
+}) {
+  const [loaded, setLoaded] = useState<{ url: string; texture: THREE.Texture } | null>(null);
+  const fallback = useMemo(() => back ? createBackTexture(symbol, title) : createFallbackFrontTexture(symbol, title), [back, symbol, title]);
+  useEffect(() => () => fallback.dispose(), [fallback]);
   useEffect(() => {
-    if (imageTexture) {
-      imageTexture.colorSpace = THREE.SRGBColorSpace;
-      imageTexture.anisotropy = 4;
-    }
-
-    return () => {
-      fallbackTexture?.dispose();
-    };
-  }, [imageTexture, fallbackTexture]);
-
-  const map = imageTexture ?? fallbackTexture ?? undefined;
-
-  return (
-    <mesh position={[0, 0, 0.057]}>
-      <planeGeometry args={[1.4, 2.1]} />
-      <meshBasicMaterial map={map} toneMapped={false} />
-    </mesh>
-  );
+    if (!image) return;
+    let active = true;
+    const texture = new THREE.TextureLoader().load(image, value => {
+      if (!active) return;
+      value.colorSpace = THREE.SRGBColorSpace;
+      value.anisotropy = 4;
+      setLoaded({ url: image, texture: value });
+    }, undefined, () => { /* Keep the readable generated cover if the URL fails. */ });
+    return () => { active = false; texture.dispose(); };
+  }, [image]);
+  return <mesh position={[0, 0, back ? -0.057 : 0.057]} rotation={[0, back ? Math.PI : 0, 0]}>
+    <planeGeometry args={[1.4, 2.1]} />
+    <meshBasicMaterial map={loaded && loaded.url === image ? loaded.texture : fallback} toneMapped={false} />
+  </mesh>;
 }
 
-function OracleCard({
-  card,
-  index,
-  position,
-  active,
-  baseScale,
-  onSelect,
-}: {
-  card: SceneCard;
-  index: number;
-  position: [number, number, number];
-  active: boolean;
-  baseScale: number;
-  onSelect: () => void;
+function OracleCard({ card, index, position, active, hovered, reduced }: {
+  card: SceneCard; index: number; position: [number, number, number]; active: boolean; hovered: boolean; reduced: boolean;
 }) {
   const group = useRef<THREE.Group>(null);
-  const [hovered, setHovered] = useState(false);
-
-  const target = useRef(new THREE.Vector3(...position));
-  const targetScale = useRef(new THREE.Vector3());
-
-  const home = useMemo(
-    () => new THREE.Vector3(...position),
-    [position[0], position[1], position[2]],
-  );
-
-  const backTexture = useMemo(() => createBackTexture(), []);
-
-  useEffect(() => {
-    return () => {
-      backTexture.dispose();
-    };
-  }, [backTexture]);
-
+  const progress = useRef(0);
+  const targetScale = useRef(new THREE.Vector3(1, 1, 1));
+  const wasActive = useRef(false);
   useFrame((state, delta) => {
-    if (!group.current) return;
-
-    const t = state.clock.elapsedTime;
-    const speed = 1 - Math.exp(-delta * 5);
-
-    target.current.set(
-      active ? 0 : home.x,
-      active ? 0 : home.y + Math.sin(t * 0.45 + index * 0.8) * 0.025,
-      active ? 1.8 : home.z,
-    );
-
-    group.current.position.lerp(target.current, speed);
-
-    const scale = active
-      ? baseScale * 1.3
-      : hovered
-        ? baseScale * 1.045
-        : baseScale;
-
+    const mesh = group.current;
+    if (!mesh) return;
+    if (active !== wasActive.current) { progress.current = 0; wasActive.current = active; }
+    if (active) progress.current = Math.min(1, progress.current + delta / ((FLIP_DURATION_MS - 100) / 1000));
+    const t = reduced ? 1 : progress.current;
+    const ease = t * t * (3 - 2 * t);
+    const speed = reduced ? 1 : 1 - Math.exp(-Math.min(delta, 0.05) * 10);
+    const float = reduced || active ? 0 : Math.sin(state.clock.elapsedTime * 0.45 + index) * 0.025;
+    mesh.position.set(position[0], position[1] + float, active ? 1 : 0);
+    const scale = active ? 1 + Math.sin(ease * Math.PI) * 0.12 : hovered && !reduced ? 1.04 : 1;
     targetScale.current.setScalar(scale);
-    group.current.scale.lerp(targetScale.current, speed);
-
-    const rotationY = active
-      ? Math.PI
-      : hovered
-        ? -0.07
-        : Math.sin(t * 0.24 + index) * 0.012;
-
-    group.current.rotation.y = THREE.MathUtils.damp(
-      group.current.rotation.y,
-      rotationY,
-      4,
-      delta,
-    );
+    mesh.scale.lerp(targetScale.current, speed);
+    mesh.rotation.y = active ? Math.PI * ease : reduced ? 0 : THREE.MathUtils.damp(mesh.rotation.y, hovered ? -0.07 : 0, 10, delta);
   });
-
-  return (
-    <group
-      ref={group}
-      position={position}
-      onClick={(event) => {
-        event.stopPropagation();
-        setHovered(false);
-        document.body.style.cursor = "default";
-        onSelect();
-      }}
-      onPointerOver={(event) => {
-        event.stopPropagation();
-
-        if (event.pointerType === "mouse") {
-          setHovered(true);
-          document.body.style.cursor = "pointer";
-        }
-      }}
-      onPointerOut={() => {
-        setHovered(false);
-        document.body.style.cursor = "default";
-      }}
-    >
-      {/* card body */}
-      <mesh>
-        <boxGeometry args={[1.48, 2.18, 0.11]} />
-        <meshStandardMaterial
-          color="#14100d"
-          metalness={0.35}
-          roughness={0.5}
-        />
-      </mesh>
-
-      {/* gold edge frame */}
-      <mesh position={[0, 0, 0.02]}>
-        <boxGeometry args={[1.5, 2.2, 0.02]} />
-        <meshStandardMaterial
-          color="#876842"
-          metalness={0.55}
-          roughness={0.35}
-        />
-      </mesh>
-
-      {/* front */}
-      <CardFront card={card} />
-
-      {/* back */}
-      <mesh position={[0, 0, -0.057]} rotation={[0, Math.PI, 0]}>
-        <planeGeometry args={[1.4, 2.1]} />
-        <meshBasicMaterial map={backTexture} toneMapped={false} />
-      </mesh>
-
-      {hovered && (
-        <pointLight
-          position={[0, 0, 0.8]}
-          color="#d9be88"
-          intensity={0.7}
-          distance={3}
-        />
-      )}
-    </group>
-  );
+  return <group ref={group} position={position}>
+    <mesh><boxGeometry args={[1.48, 2.18, 0.11]} /><meshStandardMaterial color="#14100d" metalness={0.35} roughness={0.5} /></mesh>
+    <mesh position={[0, 0, 0.02]}><boxGeometry args={[1.5, 2.2, 0.02]} /><meshStandardMaterial color="#876842" metalness={0.55} roughness={0.35} /></mesh>
+    <CardFace image={card.cover} symbol={card.symbol} title={card.title} />
+    <CardFace image={card.backCover} symbol={card.symbol} title={card.title} back />
+  </group>;
 }
 
-function CameraRig() {
-  const { camera, pointer, size } = useThree();
+class SceneBoundary extends Component<{ fallback: ReactNode; children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() { return { failed: true }; }
+  render() { return this.state.failed ? this.props.fallback : this.props.children; }
+}
+function supportsWebGL() {
+  try {
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("webgl2");
+    if (!context) return false;
+    context.getExtension("WEBGL_lose_context")?.loseContext();
+    return true;
+  } catch { return false; }
+}
 
-  const depth = size.width < 520 ? 15.4 : size.width < 900 ? 12.4 : 9.7;
-
+export default function OracleScene({ cards, onSelect, flippingId, disabled = false, paused = false }: OracleSceneProps) {
+  const wrapper = useRef<HTMLDivElement>(null);
+  const [width, setWidth] = useState(0);
+  const [webgl, setWebgl] = useState(supportsWebGL);
+  const [hovered, setHovered] = useState<string | null>(null);
+  const reduced = useReducedMotion();
   useEffect(() => {
-    camera.position.z = depth;
-    camera.lookAt(0, 0, 0);
-  }, [camera, depth]);
-
-  useFrame((_, delta) => {
-    camera.position.x = THREE.MathUtils.damp(
-      camera.position.x,
-      pointer.x * 0.13,
-      1.6,
-      delta,
-    );
-
-    camera.position.y = THREE.MathUtils.damp(
-      camera.position.y,
-      pointer.y * 0.08,
-      1.6,
-      delta,
-    );
-
-    camera.lookAt(0, 0, 0);
-  });
-
-  return null;
-}
-
-function Scene({ cards, onSelect, flippingId }: OracleSceneProps) {
-  const { size } = useThree();
-
-  const mobile = size.width < 520;
-  const tablet = size.width >= 520 && size.width < 900;
-
-  const columns = mobile ? 2 : tablet ? 3 : 4;
-  const rows = Math.ceil(cards.length / columns);
-
-  const gapX = mobile ? 1.58 : tablet ? 1.95 : 2.18;
-  const gapY = mobile ? 1.84 : tablet ? 2.12 : 2.32;
-
-  const baseScale = mobile ? 0.79 : tablet ? 0.87 : 1;
-
-  return (
-    <>
-      <color attach="background" args={["#0a0812"]} />
-      <fog attach="fog" args={["#0a0812", 18, 32]} />
-
-      <ambientLight intensity={0.8} />
-
-      <directionalLight position={[-4, 6, 8]} intensity={1.6} color="#f1dfbd" />
-
-      <pointLight
-        position={[0, 0, -4]}
-        intensity={7}
-        color="#8b6b42"
-        distance={15}
-      />
-
-      <CameraRig />
-
-      {cards.map((card, index) => {
-        const col = index % columns;
-        const row = Math.floor(index / columns);
-
-        const position: [number, number, number] = [
-          (col - (columns - 1) / 2) * gapX,
-          ((rows - 1) / 2 - row) * gapY,
-          0,
-        ];
-
-        return (
-          <OracleCard
-            key={card.id}
-            card={card}
-            index={index}
-            position={position}
-            active={flippingId === card.id}
-            baseScale={baseScale}
-            onSelect={() => onSelect(card.id)}
-          />
-        );
-      })}
-    </>
-  );
-}
-
-export default function OracleScene(props: OracleSceneProps) {
-  return (
-    <div className="relative h-[1030px] w-full overflow-hidden bg-[#0a0812] sm:h-[900px] lg:h-[780px]">
-      <div className="pointer-events-none absolute inset-0 z-10 bg-[radial-gradient(ellipse_at_50%_45%,rgba(153,113,65,0.09)_0%,transparent_55%,rgba(10,8,18,0.25)_100%)]" />
-
-      <Suspense
-        fallback={
-          <div className="flex h-full items-center justify-center text-xs tracking-[0.35em] text-[#b99a65]">
-            TENGER ATLS
-          </div>
-        }
-      >
-        <Canvas
-          camera={{
-            position: [0, 0, 15.4],
-            fov: 42,
-          }}
-          dpr={[1, 1.35]}
-          gl={{
-            antialias: true,
-            alpha: false,
-            powerPreference: "high-performance",
-          }}
-        >
-          <Scene {...props} />
+    const element = wrapper.current;
+    if (!element) return;
+    const observer = new ResizeObserver(entries => setWidth(entries[0].contentRect.width));
+    const lost = (event: Event) => { event.preventDefault(); setWebgl(false); };
+    // Capture on the DOM owner, even if context is lost before the R3F tree mounts.
+    element.addEventListener("webglcontextlost", lost, true);
+    observer.observe(element);
+    return () => { observer.disconnect(); element.removeEventListener("webglcontextlost", lost, true); };
+  }, []);
+  const layout = useMemo(() => cardLayout(cards.length, width || 320), [cards.length, width]);
+  function buttons(fallback: boolean) {
+    return <div className="absolute inset-0" role="group" aria-label="Зөгнөлт картууд">
+      {cards.map((card, index) => <button key={card.id} type="button" aria-label={card.title + " — карт сонгох"}
+        aria-busy={flippingId === card.id} disabled={disabled} onClick={() => onSelect(card.id)}
+        onPointerEnter={() => setHovered(card.id)} onPointerLeave={() => setHovered(null)}
+        onFocus={() => setHovered(card.id)} onBlur={() => setHovered(null)}
+        className={"oracle-hit-target " + (fallback ? "oracle-flat-card" : "") + (flippingId === card.id ? " is-flipping" : "")}
+        style={{ left: layout.slots[index].left, top: layout.slots[index].top, width: layout.cardWidth, height: layout.cardHeight }}>
+        {fallback ? <><span className="flat-flip"><span className="flat-front"><TarotFace image={card.cover} symbol={card.symbol} title={card.title} /></span><span className="flat-back"><TarotFace image={card.backCover} symbol={card.symbol} title={card.title} back /></span></span></> : <span className="sr-only">{card.title}</span>}
+      </button>)}
+    </div>;
+  }
+  const fallback = <>{buttons(true)}<p role="status" className="absolute bottom-0 w-full text-center text-xs text-[#bca582]">Картуудыг хөнгөн горимоор үзүүлж байна.</p></>;
+  return <div ref={wrapper} className="relative mx-auto w-full max-w-5xl" style={{ height: layout.height }} data-testid="oracle-scene" data-reduced-motion={reduced}>
+    {width > 0 ? webgl ? <SceneBoundary fallback={fallback}>
+      <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+        <Canvas orthographic camera={{ position: [0, 0, 20], zoom: layout.zoom, near: 0.1, far: 100 }}
+          dpr={[1, 1.35]} frameloop={reduced || paused ? "demand" : "always"}
+          gl={{ antialias: true, alpha: true, powerPreference: "default" }} fallback={fallback}>
+          <ambientLight intensity={0.8} />
+          <directionalLight position={[-4, 6, 8]} intensity={1.6} color="#f1dfbd" />
+          {cards.map((card, index) => <OracleCard key={card.id} card={card} index={index} position={layout.slots[index].position}
+            active={flippingId === card.id} hovered={hovered === card.id} reduced={reduced} />)}
         </Canvas>
-      </Suspense>
-
-      <div className="pointer-events-none absolute bottom-2 left-0 right-0 z-20 text-center text-[9px] tracking-[0.3em] text-[#9c8156] sm:bottom-4">
-        CHOOSE YOUR DESTINY
       </div>
-    </div>
-  );
+      {buttons(false)}
+    </SceneBoundary> : fallback : <p role="status" className="py-16 text-center text-[#bca582]">Картуудыг бэлтгэж байна…</p>}
+  </div>;
 }

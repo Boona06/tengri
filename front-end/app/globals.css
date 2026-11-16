@@ -1,15 +1,15 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #0a0812;
+  --foreground: #f4ead8;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-noto-sans);
+  --font-mono: monospace;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -22,7 +22,7 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-noto-sans), Arial, sans-serif;
 }
 
 
@@ -88,5 +88,54 @@ body {
   .card-flip-inner.is-flipping {
     animation-duration: 0.2s;
   }
+}
+
+:focus-visible { outline: 2px solid #dfc18a; outline-offset: 5px; }
+.oracle-hit-target {
+  position: absolute; border-radius: 8px; cursor: pointer; touch-action: manipulation;
+  background: transparent; border: 0; padding: 0; perspective: 900px;
+}
+.oracle-hit-target:disabled { cursor: default; }
+.oracle-flat-card { box-shadow: 0 14px 35px #0008; }
+.tarot-face {
+  position: relative; display: flex; width: 100%; height: 100%; flex-direction: column;
+  align-items: center; justify-content: center; gap: 18px; overflow: hidden; border-radius: 7px;
+  border: 1px solid #b99a65; background: radial-gradient(ellipse at 45% 35%, #35271e, #100d12 80%);
+  color: #dec18c;
+}
+.tarot-face img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.tarot-border { pointer-events: none; position: absolute; inset: 6px; border: 1px solid #b99a6599; border-radius: 3px; }
+.tarot-border::after { content: ""; position: absolute; inset: 5px; border: 1px solid #b99a653d; }
+.tarot-orbit { display: grid; place-items: center; width: 66%; aspect-ratio: 1; border-radius: 50%; border: 1px solid #b99a65; font-size: clamp(22px, 5vw, 46px); }
+.tarot-caption { max-width: 82%; font-size: 11px; line-height: 1.6; overflow-wrap: anywhere; text-align: center; }
+.tarot-reverse { background: repeating-conic-gradient(from 45deg at 50% 42%, #211811 0deg 15deg, #19120f 15deg 30deg); }
+.answer-choice { position: relative; aspect-ratio: 2 / 3; min-width: 0; border-radius: 8px; perspective: 900px; cursor: pointer; box-shadow: 0 14px 35px #0008; }
+.answer-choice:disabled { cursor: default; }
+.flat-flip { display: block; position: absolute; inset: 0; transform-style: preserve-3d; transition: transform 600ms cubic-bezier(.22,.75,.25,1); }
+.flat-front, .flat-back { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.flat-back { transform: rotateY(180deg); }
+.is-flipping .flat-flip { transform: rotateY(180deg) scale(1.06); }
+@media (hover: hover) { .answer-choice:not(:disabled):hover .flat-flip { transform: translateY(-6px); } }
+.oracle-dialog {
+  position: fixed; inset: 0; margin: auto; width: min(576px, calc(100vw - 24px)); max-height: calc(100dvh - 32px);
+  overflow-y: auto; overscroll-behavior: contain; padding: 48px 28px 32px; border-radius: 18px;
+  border: 1px solid #b6956166; background: radial-gradient(ellipse at top, #291e2b, #150f1f 78%);
+  color: #f4ead8; text-align: center; box-shadow: 0 25px 90px #000b; overflow-wrap: anywhere;
+}
+.oracle-dialog::backdrop { background: #05040be6; backdrop-filter: blur(12px); }
+.modal-close { position: absolute; top: 12px; right: 12px; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; border: 1px solid #b6956155; color: #cab68d; font-size: 24px; cursor: pointer; }
+.oracle-button { border: 1px solid #c3a16e99; border-radius: 999px; padding: 12px 24px; font-size: 13px; color: #dfc48e; cursor: pointer; }
+.oracle-button:hover:not(:disabled) { background: #c3a16e; color: #160f20; }
+.oracle-button:disabled { opacity: .55; cursor: not-allowed; }
+.eyebrow { font-size: 11px; letter-spacing: .22em; color: #bda170; }
+.oracle-loading { display: grid; justify-items: center; gap: 20px; padding: 80px 20px; color: #bca582; font-size: 13px; }
+.oracle-loading > span { font-size: 36px; animation: oracle-breathe 1.8s ease-in-out infinite; }
+@keyframes oracle-breathe { 50% { opacity: .4; transform: scale(.85); } }
+@media (max-width: 480px) { .oracle-dialog { padding: 48px 16px 24px; } .tarot-caption { font-size: 9px; } }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; }
+  .flat-flip { transition: none; }
+  .is-flipping .flat-flip { transform: rotateY(180deg); }
+  .oracle-loading > span { animation: none; }
 }
 
