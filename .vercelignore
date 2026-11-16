@@ -1,0 +1,8 @@
+**/node_modules/**
+**/.next/**
+**/dist/**
+**/.env
+**/.env.*
+**/test-results/**
+**/playwright-report/**
+**/.live-content-test.json

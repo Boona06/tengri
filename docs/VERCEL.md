@@ -38,7 +38,12 @@ Frontend-ээс public API ашиглах тул production deployment нь Verc
 
 Одоо байгаа frontend project → Settings → Environment Variables:
 
-`NEXT_PUBLIC_API_URL` = deploy-оос гарсан backend-ийн **HTTPS origin**, төгсгөлд `/api` эсвэл `/` нэмэхгүй.
+`NEXT_PUBLIC_API_URL` = `https://front-end-dun-beta.vercel.app` (frontend-ийн origin).
+
+`BACKEND_API_URL` = deploy-оос гарсан backend-ийн **HTTPS origin**, төгсгөлд `/api` эсвэл `/` нэмэхгүй.
+
+Next.js rewrite нь frontend-ийн `/api/*` хүсэлтийг backend рүү дамжуулна.
+Ингэснээр browser-ийн админ cookie frontend domain дээр үлдэж, third-party cookie-оос хамаарахгүй.
 
 Production environment-д хадгалж frontend-ийг **Redeploy** хийнэ.
 Backend URL-ийг урьдчилж тааж тохируулахгүй. Database URL-ийг энэ хувьсагчид хэзээ ч оруулахгүй.
@@ -46,12 +51,11 @@ Backend URL-ийг урьдчилж тааж тохируулахгүй. Databas
 ## 3. Баталгаажуулах
 
 - Backend `/api/health` болон `/api/contents` 200.
-- Frontend Network хүсэлт `localhost:4000` биш бодит backend руу очно.
+- Frontend Network хүсэлт `localhost:4000` биш frontend-ийн `/api/*` руу очиж, rewrite-аар backend-д хүрнэ.
 - CORS origin frontend-ийн яг одоогийн domain-тай таарна.
 - Карт байхгүй үед холболтын алдаа биш хоосон контентын төлөв гарна.
-- Admin login/logout-ийг тусад нь шалгана. Одоогийн cookie `SameSite=Lax` тул хоёр тусдаа
-  `vercel.app` domain хооронд админ session хадгалагдахгүй байж болно. Same-origin proxy эсвэл
-  cookie/CSRF хамгаалалтыг хамт шийдэх шаардлагатай; нийтэд нээлттэй контентын API үүнээс хамаарахгүй.
+- Admin login/logout/refresh-ийг тусад нь шалгана. Same-origin rewrite ашиглаж байгаа тул
+  `HttpOnly`, `Secure`, `SameSite=Lax` cookie-г сулруулах шаардлагагүй.
 
 Энэ нь production төлбөрийн бэлэн хувилбар биш: session/unlock болон QPay-ийн үлдсэн ажлыг `AUDIT.md`-ээс харна уу.
 

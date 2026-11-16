@@ -8,3 +8,6 @@
 **/playwright-report/
 **/.live-content-test.json
 **/*.tsbuildinfo
+**/.vercel/
+.vercel
+.env*
