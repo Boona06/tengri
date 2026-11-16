@@ -7,6 +7,8 @@
     "test": "node --import tsx --test tests/*.test.ts",
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
+    "vercel-build": "prisma generate --config prisma7.config.ts && npm run build",
+    "db:migrate:deploy": "prisma migrate deploy --config prisma7.config.ts",
     "start": "node dist/index.js"
   },
   "keywords": [],
