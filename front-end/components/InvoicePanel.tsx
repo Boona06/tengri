@@ -75,12 +75,12 @@ export default function InvoicePanel({
   }
   return (
     <div className="mt-6">
-      <p className="mb-5 text-3xl text-[#dfc7ff]">
+      <p className="mb-5 text-3xl text-[#193d37]">
         {(invoice?.amount ?? price).toLocaleString("en-US")}₮
       </p>
       {!invoice && (
         <>
-          <label className="block text-left text-sm text-[#c6b8ca]">
+          <label className="block text-left text-sm text-[#586e65]">
             Купон байгаа юу?
             <input
               className="mt-2 mb-4 w-full rounded-xl border border-[#a28aba55] bg-[#171020] p-3 uppercase"
@@ -124,19 +124,19 @@ export default function InvoicePanel({
           >
             {busy ? "Шалгаж байна…" : "Төлбөр шалгах"}
           </button>
-          <p className="mt-3 text-xs text-[#a99dad]">
+          <p className="mt-3 text-xs text-[#586e65]">
             Хүчинтэй хугацаа:{" "}
             {new Date(invoice.expiresAt).toLocaleTimeString("mn-MN")}
           </p>
         </>
       )}
       {status && (
-        <p role="status" className="mt-4 text-sm leading-7 text-[#b9aabd]">
+        <p role="status" className="mt-4 text-sm leading-7 text-[#586e65]">
           {status}
         </p>
       )}
       {error && (
-        <p role="alert" className="mt-4 text-sm text-rose-300">
+        <p role="alert" className="mt-4 text-sm text-rose-700">
           {error}
         </p>
       )}

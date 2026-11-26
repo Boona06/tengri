@@ -379,16 +379,16 @@ export default function Home() {
           <p className="eyebrow">
             {pickerCard.type === "TOPIC" ? "СЭДЭВ" : "АСУУЛТ"}
           </p>
-          <h2 className="mt-3 text-xl text-[#e8d5b3]">{pickerCard.title}</h2>
+          <h2 className="mt-3 text-xl text-[#193d37]">{pickerCard.title}</h2>
           {pickerCard.question && (
-            <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-[#c6b8ca]">
+            <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-[#586e65]">
               {pickerCard.question}
             </p>
           )}
-          <h3 className="mt-5 text-xl text-[#f0e0c4]">
+          <h3 className="mt-5 text-xl text-[#193d37]">
             Гурван нууц картаас нэгийг сонго
           </h3>
-          <p className="mt-3 text-xs leading-6 text-[#a99dad]">
+          <p className="mt-3 text-xs leading-6 text-[#586e65]">
             Карт бүр өөрийн хариулттай. Зөн совингоо дагаарай.
           </p>
           <div className="mx-auto mt-8 grid max-w-[475px] grid-cols-3 gap-3 sm:gap-5">
@@ -426,12 +426,12 @@ export default function Home() {
             ))}
           </div>
           {revealingIndex !== null && (
-            <p role="status" className="mt-5 text-sm text-[#dfc48e]">
+            <p role="status" className="mt-5 text-sm text-[#193d37]">
               Хариултыг нээж байна…
             </p>
           )}
           {error && (
-            <p role="alert" className="mt-5 text-sm text-red-300">
+            <p role="alert" className="mt-5 text-sm text-red-700">
               {error}
             </p>
           )}
@@ -447,15 +447,15 @@ export default function Home() {
             />
           </div>
           <p className="eyebrow">ТАНЫ ХАРИУЛТ</p>
-          <h2 className="mt-4 text-2xl text-[#e8d5b3]">
+          <h2 className="mt-4 text-2xl text-[#193d37]">
             {selectedCard.card.title}
           </h2>
           {selectedCard.card.question && (
-            <h3 className="mt-6 whitespace-pre-wrap text-base leading-8 text-[#f0e4d0]">
+            <h3 className="mt-6 whitespace-pre-wrap text-base leading-8 text-[#193d37]">
               {selectedCard.card.question}
             </h3>
           )}
-          <p className="mt-6 whitespace-pre-wrap text-left text-base leading-8 text-[#c6b8ca]">
+          <p className="mt-6 whitespace-pre-wrap text-left text-base leading-8 text-[#586e65]">
             {selectedCard.answer.text}
           </p>
           {(() => {
@@ -464,41 +464,52 @@ export default function Home() {
                 .find((c) => c.id === selectedCard.card.id)
                 ?.answers.find((a) => a.id === selectedCard.answer.id)
                 ?.nextContentId || selectedCard.answer.nextContentId;
-            const next = cards.find((c) => c.id === nextId);
-            return next ? (
+            const next = cards.find((c) => c.id === nextId && c.id !== selectedCard.card.id);
+            const remaining = cards.filter((c) => c.id !== selectedCard.card.id && c.id !== next?.id && !openedAnswers[c.id]);
+            const suggestions = next ? [next, ...remaining] : remaining;
+            return suggestions.length ? (
+              <section className="atlas-continuation" aria-label="Үргэлжлүүлэх асуултууд">
+                <h3 className="mt-8 text-lg font-semibold">Цааш юу сонирхож байна?</h3>
+                <p className="mt-2 text-sm text-[#586e65]">Дараагийн асуултаа сонгоод үргэлжлүүлээрэй.</p>
+                <div className="atlas-suggestions">
+                {suggestions.map((next, index) => (
               <button
+                key={next.id}
                 className="atlas-next"
                 onClick={() => {
                   setSelectedCard(null);
                   chooseTopic(next, true);
                 }}
               >
-                <small>ДАРААГИЙН АСУУЛТ</small>
+                <small>{index === 0 ? "ДАРААГИЙН АСУУЛТ" : "БАС СОНИРХОЖ БОЛОХ АСУУЛТ"}</small>
                 <strong>{next.title}</strong>
-                <span>Үргэлжлүүлэх ↗</span>
+                <span>{openedAnswers[next.id] ? "Дахин унших" : settings.cardPriceMnt.toLocaleString("en-US") + "₮ · Үргэлжлүүлэх"} ↗</span>
               </button>
+                ))}
+                </div>
+              </section>
             ) : (
               <p className="mt-6 text-sm">
-                Өөр асуулт сонирхвол доорх жагсаалтаас сонгоорой.
+                Одоогоор нийтлэгдсэн бүх асуултыг уншлаа. Шинэ асуулт нэмэгдэхээр эндээс үргэлжлүүлээрэй.
               </p>
             );
           })()}
           <button
             type="button"
             onClick={closeModal}
-            className="oracle-button mt-8"
+            className="mt-8 text-sm underline underline-offset-4 text-[#586e65]"
           >
-            Бусад карт руу буцах
+            Түр завсарлах
           </button>
         </Modal>
       )}
       {paymentCard && (
         <Modal key="payment" title="Картын төлбөр" onClose={closeModal}>
           <p className="eyebrow">НУУЦЫГ ТАЙЛАХ</p>
-          <h2 className="mt-4 text-xl text-[#e8d5b3]">
+          <h2 className="mt-4 text-xl text-[#193d37]">
             {paymentCard.card.title}
           </h2>
-          <p className="mt-4 text-sm leading-7 text-[#b9aabd]">
+          <p className="mt-4 text-sm leading-7 text-[#586e65]">
             Энэ картын хариултыг нээхэд төлбөр шаардлагатай.
           </p>
           {paymentCard.selectionId && (

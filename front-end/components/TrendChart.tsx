@@ -33,21 +33,21 @@ export default function TrendChart({
                   x2={700}
                   y1={y(max * n)}
                   y2={y(max * n)}
-                  stroke="#eee8f5"
+                  stroke="#dde3d7"
                 />
-                <text x={0} y={y(max * n) + 4} fontSize={10} fill="#84758f">
+                <text x={0} y={y(max * n) + 4} fontSize={10} fill="#586e65">
                   {Math.round(max * n).toLocaleString()}
                 </text>
               </g>
             ))}
             <polygon
               points={`45,190 ${points} ${x(data.length - 1)},190`}
-              fill="#8b65dc18"
+              fill="#244b4318"
             />
             <polyline
               points={points}
               fill="none"
-              stroke="#8053d8"
+              stroke="#244b43"
               strokeWidth={3}
               strokeLinejoin="round"
             />
@@ -57,7 +57,7 @@ export default function TrendChart({
                   cx={x(i)}
                   cy={y(d[metric])}
                   r={active === i ? 6 : 4}
-                  fill="#8053d8"
+                  fill="#244b43"
                   tabIndex={0}
                   onFocus={() => setActive(i)}
                   onMouseEnter={() => setActive(i)}
@@ -74,7 +74,7 @@ export default function TrendChart({
                     y={217}
                     fontSize={11}
                     textAnchor="middle"
-                    fill="#84758f"
+                    fill="#586e65"
                   >
                     {d.day.slice(5)}
                   </text>

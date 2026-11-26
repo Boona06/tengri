@@ -52,18 +52,18 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#0a0812] px-5 py-12 text-[#f4ead8]">
+    <main className="admin-login relative flex min-h-screen items-center justify-center overflow-hidden bg-[#f5f3ed] px-5 py-12 text-[#193d37]">
       <div className="pointer-events-none absolute left-1/2 top-1/3 h-80 w-80 -translate-x-1/2 rounded-full bg-[#987044]/10 blur-[110px]" />
 
-      <div className="relative w-full max-w-md rounded-2xl border border-[#b99a65]/30 bg-[#15101b]/95 p-7 shadow-2xl sm:p-10">
+      <div className="admin-login-panel relative w-full max-w-md rounded-2xl border border-[#b99a65]/30 bg-[#f5f3ed]/95 p-7 shadow-2xl sm:p-10">
         <div className="mb-9 text-center">
-          <div className="mb-5 text-3xl text-[#d6b77d]">✧</div>
+          <div className="mb-5 text-3xl text-[#193d37]">✧</div>
 
-          <h1 className="text-xl font-semibold tracking-[0.25em] text-[#e1c58e]">
+          <h1 className="text-xl font-semibold tracking-[0.25em] text-[#193d37]">
             TENGER ATLS
           </h1>
 
-          <p className="mt-3 text-[10px] tracking-[0.35em] text-[#9f8b72]">
+          <p className="mt-3 text-[10px] tracking-[0.35em] text-[#586e65]">
             ADMINISTRATION
           </p>
 
@@ -71,7 +71,7 @@ export default function AdminLoginPage() {
 
           <h2 className="mt-7 text-2xl font-light">Админ нэвтрэх</h2>
 
-          <p className="mt-3 text-sm text-[#a99dad]">
+          <p className="mt-3 text-sm text-[#586e65]">
             Удирдлагын хэсэгт нэвтэрнэ үү.
           </p>
         </div>
@@ -80,7 +80,7 @@ export default function AdminLoginPage() {
           <div>
             <label
               htmlFor="email"
-              className="mb-2 block text-xs text-[#c5ad86]"
+              className="mb-2 block text-xs text-[#193d37]"
             >
               Имэйл хаяг
             </label>
@@ -93,14 +93,14 @@ export default function AdminLoginPage() {
               autoComplete="username"
               required
               placeholder="admin@example.com"
-              className="w-full rounded-lg border border-[#9b8055]/35 bg-[#0d0a12] px-4 py-3 text-sm text-white outline-none transition focus:border-[#d0ad74]"
+              className="w-full rounded-lg border border-[#9b8055]/35 bg-[#f5f3ed] px-4 py-3 text-sm text-[#193d37] outline-none transition focus:border-[#d0ad74]"
             />
           </div>
 
           <div>
             <label
               htmlFor="password"
-              className="mb-2 block text-xs text-[#c5ad86]"
+              className="mb-2 block text-xs text-[#193d37]"
             >
               Нууц үг
             </label>
@@ -113,14 +113,14 @@ export default function AdminLoginPage() {
               autoComplete="current-password"
               required
               placeholder="••••••••••••"
-              className="w-full rounded-lg border border-[#9b8055]/35 bg-[#0d0a12] px-4 py-3 text-sm text-white outline-none transition focus:border-[#d0ad74]"
+              className="w-full rounded-lg border border-[#9b8055]/35 bg-[#f5f3ed] px-4 py-3 text-sm text-[#193d37] outline-none transition focus:border-[#d0ad74]"
             />
           </div>
 
           {error && (
             <div
               role="alert"
-              className="rounded-lg border border-red-400/30 bg-red-500/10 px-4 py-3 text-sm text-red-300"
+              className="rounded-lg border border-red-400/30 bg-red-500/10 px-4 py-3 text-sm text-red-700"
             >
               {error}
             </div>
@@ -129,7 +129,7 @@ export default function AdminLoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg bg-[#c5a46e] py-3.5 text-sm font-semibold tracking-[0.12em] text-[#100c12] transition hover:bg-[#e0be83] disabled:cursor-not-allowed disabled:opacity-60"
+            className="w-full rounded-lg bg-[#244b43] py-3.5 text-sm font-semibold tracking-[0.12em] text-white transition hover:bg-[#193d37] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {loading ? "НЭВТЭРЧ БАЙНА..." : "НЭВТРЭХ"}
           </button>
@@ -138,7 +138,7 @@ export default function AdminLoginPage() {
         <div className="mt-8 text-center">
           <Link
             href="/"
-            className="text-xs text-[#9887a2] transition hover:text-[#e2c58d]"
+            className="text-xs text-[#586e65] transition hover:text-[#e2c58d]"
           >
             ← Нүүр хуудас руу буцах
           </Link>

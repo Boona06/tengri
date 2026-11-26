@@ -181,6 +181,8 @@ for (const choice of [1, 2, 3]) {
     page.on("pageerror", (error) => errors.push(error.message));
     await page.goto("/");
     const card = await openPicker(page);
+    await expect(page.getByRole("dialog")).toHaveCSS("background-color", "rgb(245, 243, 237)");
+    if (choice === 1) await page.screenshot({ path: "test-results/atlas-picker.png" });
     await expect(page.getByRole("dialog")).toContainText(
       "Өөрийн хүсэл мөрөөдлөө",
     );
@@ -190,8 +192,11 @@ for (const choice of [1, 2, 3]) {
     const answer = page.getByRole("dialog", { name: "Таны хариулт" });
     await expect(answer).toBeVisible();
     expect(api.revealed).toHaveLength(1);
+    await expect(answer.getByRole("region", { name: "Үргэлжлүүлэх асуултууд" })).toBeVisible();
+    await expect(answer.locator(".atlas-next")).toHaveCount(11);
+    if (choice === 1) await page.screenshot({ path: "test-results/atlas-answer.png" });
     await expect(answer).toContainText(`БАТАЛГААТ ХАРИУЛТ ${api.revealed[0]}`);
-    await page.getByRole("button", { name: "Бусад карт руу буцах" }).click();
+    await page.getByRole("button", { name: "Түр завсарлах" }).click();
     await expect(page.getByRole("dialog")).toHaveCount(0);
     await expect(card).toBeFocused();
     await card.press("Enter");
