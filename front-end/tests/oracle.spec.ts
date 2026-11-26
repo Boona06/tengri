@@ -14,6 +14,7 @@ function catalogue(count = 12) {
     answers: [1, 2, 3].map((n) => ({
       id: `${i}-answer-${n}`,
       position: n,
+      nextContentId: i + 1 < count ? `card-${i + 1}` : null,
       visualType: n === 2 ? "ICON" : "IMAGE",
       iconName: n === 2 ? "♡" : null,
       imageUrl: n === 2 ? null : `/cards/card-0${n}.jpg`,
@@ -157,7 +158,9 @@ for (const viewport of [
             other.y + other.h <= box.y,
         ).toBeTruthy();
     }
-    await expect(page.locator("canvas")).toBeVisible();
+    await expect(page.locator("canvas")).toHaveCount(0);
+    await page.getByRole("button", { name: "Илүү олон асуулт үзэх ↓" }).click();
+    await expect(buttons).toHaveCount(15);
     await page.waitForLoadState("networkidle");
     await page.screenshot({
       path: `test-results/layout-${viewport.width}.png`,
@@ -266,9 +269,7 @@ test("WebGL unavailable: accessible 2D cards, reduced motion and keyboard modal 
   });
   await mockApi(page);
   await page.goto("/");
-  await expect(
-    page.getByText("Картуудыг хөнгөн горимоор үзүүлж байна."),
-  ).toBeVisible();
+
   await expect(page.locator("canvas")).toHaveCount(0);
   const card = page.getByRole("button", {
     name: "Тестийн карт 1 — карт сонгох",
@@ -284,30 +285,30 @@ test("WebGL unavailable: accessible 2D cards, reduced motion and keyboard modal 
   ).toBe(true);
   await page.keyboard.press("Escape");
   await expect(card).toBeFocused();
-  await expect(page.getByTestId("oracle-scene")).toHaveAttribute(
-    "data-reduced-motion",
-    "true",
-  );
 });
 
-test("context loss switches to usable fallback without Html unmount errors", async ({
+test("answer leads to the configured next question without bypassing payment", async ({
   page,
 }) => {
-  const errors: string[] = [];
-  page.on("pageerror", (error) => errors.push(error.message));
   await mockApi(page);
   await page.goto("/");
-  const canvas = page.locator("canvas");
-  await expect(canvas).toBeVisible();
-  await canvas.evaluate((el) =>
-    el.dispatchEvent(new Event("webglcontextlost", { cancelable: true })),
-  );
-  await expect(
-    page.getByText("Картуудыг хөнгөн горимоор үзүүлж байна."),
-  ).toBeVisible();
   await openPicker(page);
-  await page.keyboard.press("Escape");
-  expect(errors).toEqual([]);
+  await page
+    .getByRole("button", { name: "Нууц карт 1 сонгох", exact: true })
+    .click();
+  await expect(
+    page.getByRole("dialog", { name: "Таны хариулт" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: /ДАРААГИЙН АСУУЛТ/ }).click();
+  await expect(
+    page.getByRole("dialog", { name: "Гурван хариултаас сонгох" }),
+  ).toContainText("Тестийн карт 2");
+  await page
+    .getByRole("button", { name: "Нууц карт 1 сонгох", exact: true })
+    .click();
+  await expect(
+    page.getByRole("dialog", { name: "Картын төлбөр" }),
+  ).toBeVisible();
 });
 
 test("empty, invalid and failed catalogue states are readable and retryable", async ({

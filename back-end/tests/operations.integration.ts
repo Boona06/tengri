@@ -66,6 +66,11 @@ try {
   const contents = (await admin("/api/admin/contents")).body.data.filter(
     (c: { id: string }) => contentIds.includes(c.id),
   );
+  const linked=await admin('/api/admin/contents/'+contents[0].id,'PUT',{...contents[0],answers:contents[0].answers.map((a:{text:string;visualType:string;iconName:string})=>({...a,nextContentId:contents[1].id}))});
+  assert.equal(linked.status,200); contents[0]=linked.body.data;
+  assert.equal(contents[0].answers[0].nextContentId,contents[1].id);
+  const catalogue=(await admin('/api/contents')).body.data;
+  assert.equal(catalogue.find((c:{id:string})=>c.id===contents[0].id).answers[0].nextContentId,contents[1].id);
   const choices = await Promise.all(
     contents
       .slice(0, 2)

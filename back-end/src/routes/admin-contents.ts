@@ -10,6 +10,7 @@ const visualSchema = z.object({
 });
 
 const answerSchema = visualSchema.extend({
+  nextContentId: z.string().min(1).nullable().optional(),
   text: z.string().trim().min(1).max(5000),
 });
 
@@ -100,6 +101,7 @@ function getContentData(input: ContentInput) {
 function getAnswerData(answers: ContentInput["answers"]) {
   return answers.map((answer, index) => ({
     text: answer.text,
+    nextContentId: answer.nextContentId || null,
     position: index + 1,
     visualType: answer.visualType,
     imageUrl: answer.visualType === "IMAGE" ? (answer.imageUrl ?? null) : null,

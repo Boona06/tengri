@@ -121,6 +121,7 @@ export function createJourneyRouter() {
             imageUrl: a.imageUrl,
             iconName: a.iconName,
             visualType: a.visualType,
+            nextContentId: a.nextContentId,
           },
           free,
           unlocked: free,

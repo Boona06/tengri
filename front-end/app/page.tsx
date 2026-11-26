@@ -1,6 +1,6 @@
 "use client";
+/* eslint-disable @next/next/no-img-element -- Admin images are lazy-loaded external assets. */
 
-import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
 import InvoicePanel from "../components/InvoicePanel";
 import Modal from "../components/Modal";
@@ -15,14 +15,6 @@ import {
 } from "../lib/cards";
 import { useReducedMotion } from "../lib/use-reduced-motion";
 
-const OracleScene = dynamic(() => import("../components/OracleScene"), {
-  ssr: false,
-  loading: () => (
-    <p role="status" className="py-16 text-center text-[#bca582]">
-      Картуудыг бэлтгэж байна…
-    </p>
-  ),
-});
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 type RevealedCard = { card: Card; answer: Answer; selectionId?: string };
 function readableError(error: unknown, fallback: string) {
@@ -39,6 +31,8 @@ export default function Home() {
     firstCardFree: true,
     siteName: "TENGER ATLS",
   });
+  const [visible, setVisible] = useState(12);
+  const [view, setView] = useState("all");
   const [cards, setCards] = useState<Card[]>([]);
   const [openedAnswers, setOpenedAnswers] = useState<Record<string, Answer>>(
     {},
@@ -124,8 +118,8 @@ export default function Home() {
     };
   }, [reload]);
 
-  function chooseTopic(card: Card) {
-    if (selecting.current || modalOpen) return;
+  function chooseTopic(card: Card, continuing = false) {
+    if (selecting.current || (modalOpen && !continuing)) return;
     trigger.current = document.activeElement as HTMLElement;
     setError("");
     if (openedAnswers[card.id]) {
@@ -223,136 +217,157 @@ export default function Home() {
   return (
     <main
       id="home"
+      data-theme="atlas"
       className="min-h-screen overflow-x-clip bg-[#0a0812] text-[#f4ead8]"
     >
-      {/* HEADER */}
-      <header className="mx-auto flex max-w-7xl items-center justify-between px-4 py-5 sm:px-6 sm:py-7">
-        <a href="#home" className="min-w-0">
-          <div className="text-[15px] font-semibold tracking-[0.23em] text-[#d9bd83] sm:text-xl sm:tracking-[0.3em]">
-            {settings.siteName}
-          </div>
-
-          <div className="mt-1 text-[8px] tracking-[0.3em] text-[#887b99] sm:text-[9px]">
-            ӨӨРТӨӨ ЗОРИУЛСАН ХЭДЭН ХОРМ
-          </div>
+      <header className="atlas-header">
+        <a href="#home" className="atlas-logo">
+          <span aria-hidden="true">✳</span>
+          {settings.siteName}
+          <small>ЧИНИЙ АСУУЛТ. ЧИНИЙ СОНГОЛТ.</small>
         </a>
-
-        <nav className="hidden gap-8 text-xs tracking-widest text-[#b8aabb] md:flex">
-          <a href="#home" className="hover:text-[#d9bd83]">
-            НҮҮР
-          </a>
-          <a href="#cards" className="hover:text-[#d9bd83]">
-            КАРТУУД
-          </a>
-          <a href="#about" className="hover:text-[#d9bd83]">
-            БИДНИЙ ТУХАЙ
-          </a>
+        <nav aria-label="Үндсэн цэс">
+          <button
+            className={view === "all" ? "active" : ""}
+            onClick={() => setView("all")}
+          >
+            Бүх асуулт
+          </button>
+          <button
+            className={view === "mine" ? "active" : ""}
+            onClick={() => setView("mine")}
+          >
+            Миний картууд <span>{openedCount}</span>
+          </button>
         </nav>
-
-        <span className="shrink-0 rounded-full border border-[#9b8055]/40 px-3 py-2 text-[10px] text-[#d9bd83] sm:px-4 sm:text-xs">
-          ✧ Зөн билэг ✧
-        </span>
       </header>
-
-      {/* HERO */}
-      <section className="relative mx-auto max-w-5xl px-5 pb-7 pt-8 text-center sm:px-6 sm:pb-12 sm:pt-16">
-        <div className="pointer-events-none absolute left-1/2 top-0 h-64 w-64 -translate-x-1/2 rounded-full bg-[#683b91]/10 blur-[90px]" />
-
-        <div className="relative">
-          <div className="mb-4 text-xs tracking-[0.5em] text-[#b59b71] sm:mb-6 sm:text-sm">
-            ✧ ✧ ✧
-          </div>
-
-          <p className="mb-4 text-[10px] tracking-[0.28em] text-[#a896b5] sm:mb-5 sm:text-xs sm:tracking-[0.45em]">
-            ЖААХАН ЗАВСАРЛАЯ
-          </p>
-
-          <h1 className="text-[clamp(1.9rem,8vw,3rem)] font-light leading-[1.25] tracking-[0.02em] sm:text-6xl sm:tracking-widest">
-            <span className="mt-1 block text-[#d8bd83] sm:mt-3">
-              Юу бодогдоод байна?
-            </span>
+      <section className="atlas-intro">
+        <div>
+          <span className="atlas-kicker">ӨӨР ӨНЦГӨӨС ХАРААД ҮЗЬЕ</span>
+          <h1>
+            Нэг асуулт.
+            <br />
+            <em>Олон боломж.</em>
           </h1>
-
-          <p className="mx-auto mt-5 max-w-xl text-[13px] leading-6 text-[#a99dad] sm:mt-7 sm:text-sm sm:leading-8">
-            Асуухыг хүссэн зүйлээ бодоод, таалагдсан картаа сонго. Хариулт нь
-            өөр өнцгөөс харахад тусалж магадгүй.
+          <p>
+            Сонирхсон сэдвээ сонгоод гурван картаас нэгийг нээ. Хариултын дараа
+            дараагийн асуултаар үргэлжлүүлж болно.
           </p>
-
-          <div className="mx-auto mt-6 h-px w-24 bg-gradient-to-r from-transparent via-[#c2a16a] to-transparent sm:mt-9" />
-
-          <p className="mt-4 text-[11px] tracking-[0.2em] text-[#c4ad85] sm:mt-5 sm:text-xs">
-            НЭГ СЭДЭВ СОНГООРОЙ
+        </div>
+        <div className="atlas-note">
+          <span aria-hidden="true">↗</span>
+          <p>
+            {settings.firstCardFree
+              ? "Эхний сонголт биднээс."
+              : "Өөртөө хэдэн хором гарга."}
           </p>
+          <small>
+            Дараагийн шинэ карт ·{" "}
+            {settings.cardPriceMnt.toLocaleString("en-US")}₮
+          </small>
         </div>
       </section>
-
-      <section
-        id="cards"
-        aria-label="Карт сонгох"
-        className="mx-auto max-w-7xl px-3 pb-12 sm:px-5 sm:pb-20"
-      >
-        <div className="mx-auto mb-6 flex max-w-5xl items-center justify-between gap-3 px-2">
-          <p className="text-[10px] tracking-[0.16em] text-[#9c8aa7] sm:text-xs">
-            {cards.length} НУУЦ СЭДЭВ / АСУУЛТ
-          </p>
-          <p className="text-right text-xs text-[#b49a6f]">
-            {openedCount === 0 && settings.firstCardFree
-              ? "Эхний карт үнэгүй"
-              : "Нэг карт · " +
-                settings.cardPriceMnt.toLocaleString("en-US") +
-                "₮"}
-          </p>
+      <section id="cards" className="atlas-catalogue" aria-label="Карт сонгох">
+        <div className="atlas-section-title">
+          <h2>
+            {view === "mine" ? "Чиний нээсэн картууд" : "Юу сонирхож байна?"}
+          </h2>
+          <span>{view === "mine" ? openedCount : cards.length} сонголт</span>
         </div>
-        {loading && (
-          <div role="status" className="oracle-loading">
-            <span aria-hidden="true">✧</span>
-            <p>Картуудыг уншиж байна…</p>
-          </div>
-        )}
+        {loading && <p role="status">Картуудыг бэлтгэж байна…</p>}
         {!modalOpen && error && (
-          <div role="alert" className="py-8 text-center text-sm text-[#dfc48e]">
+          <div role="alert">
             <p>{error}</p>
             <button
-              type="button"
-              disabled={loading}
-              onClick={() => setReload((value) => value + 1)}
-              className="oracle-button mt-4"
+              className="oracle-button"
+              onClick={() => setReload((v) => v + 1)}
             >
               Дахин ачаалах
             </button>
           </div>
         )}
         {!loading && !error && cards.length === 0 && (
-          <p role="status" className="py-16 text-center text-sm text-[#a99dad]">
+          <p role="status">
             Одоогоор нийтэлсэн карт алга байна. Удахгүй дахин зочлоорой.
           </p>
         )}
-        {!loading && cards.length > 0 && (
-          <OracleScene
-            cards={cards}
-            flippingId={flippingId}
-            disabled={!!flippingId || modalOpen}
-            paused={modalOpen}
-            onSelect={(id) => {
-              const card = cards.find((item) => item.id === id);
-              if (card) chooseTopic(card);
-            }}
-          />
+        {!loading && view === "mine" && openedCount === 0 && (
+          <p className="atlas-empty">
+            Одоогоор карт нээгээгүй байна. Сонирхсон асуултаасаа эхлээрэй.
+          </p>
         )}
-        <p className="mt-8 text-center text-xs tracking-[0.2em] text-[#b49a6f]">
-          ЗӨН СОВИНГОО ДАГААРАЙ
-        </p>
+        <div className="atlas-grid" role="group" aria-label="Зөгнөлт картууд">
+          {cards
+            .filter((c) => view === "all" || openedAnswers[c.id])
+            .slice(0, visible)
+            .map((card, index) => (
+              <button
+                type="button"
+                key={card.id}
+                aria-label={card.title + " — карт сонгох"}
+                disabled={!!flippingId || modalOpen}
+                onClick={() => chooseTopic(card)}
+                className={
+                  "atlas-card tone-" +
+                  (index % 6) +
+                  (flippingId === card.id ? " choosing" : "")
+                }
+              >
+                <div className="atlas-card-top">
+                  <span>{String(index + 1).padStart(2, "0")}</span>
+                  <span className="atlas-symbol" aria-hidden="true">
+                    {card.symbol || "✳"}
+                  </span>
+                </div>
+                {card.cover && (
+                  <img
+                    src={card.cover}
+                    alt=""
+                    loading="lazy"
+                    className="atlas-cover"
+                  />
+                )}
+                <h3>{card.title}</h3>
+                {card.question && card.question !== card.title && (
+                  <p>{card.question}</p>
+                )}
+                <div className="atlas-card-bottom">
+                  <span>
+                    {openedAnswers[card.id]
+                      ? "Дахин унших"
+                      : openedCount === 0 && settings.firstCardFree
+                        ? "Үнэгүй эхлэх"
+                        : settings.cardPriceMnt.toLocaleString("en-US") + "₮"}
+                    <small>
+                      {openedAnswers[card.id]
+                        ? "Нээгдсэн карт"
+                        : "3 картаас нэгийг сонгоно"}
+                    </small>
+                  </span>
+                  <span className="atlas-arrow" aria-hidden="true">
+                    ↗
+                  </span>
+                </div>
+              </button>
+            ))}
+        </div>
+        {cards.filter((c) => view === "all" || openedAnswers[c.id]).length >
+          visible && (
+          <button
+            className="atlas-more"
+            onClick={() => setVisible((v) => v + 12)}
+          >
+            Илүү олон асуулт үзэх ↓
+          </button>
+        )}
       </section>
-      <footer
-        id="about"
-        className="border-t border-[#8e754c]/20 px-6 py-8 text-center"
-      >
-        <p className="text-xs tracking-[0.3em] text-[#9d8969]">
-          {settings.siteName}
-        </p>
-        <p className="mx-auto mt-3 max-w-xl text-xs leading-6 text-[#a99dad]">
-          Насанд хүрэгчдэд зориулсан зөгнөлт тайлбар, өөрийгөө эргэцүүлэх аялал.
-          Эдгээр тайлбар нь бодит үйл явдлын баталгаа, мэргэжлийн зөвлөгөө биш.
+      <footer className="atlas-footer">
+        <strong>{settings.siteName}</strong>
+        <p>
+          Хариулт бүрийг зүгээр л нэг шинэ өнцөг гэж хүлээж аваарай.
+          <br />
+          18+ · Зугаа, өөрийгөө эргэцүүлэх зориулалттай. Бодит үйл явдлын
+          баталгаа биш.
         </p>
       </footer>
       {pickerCard && (
@@ -443,6 +458,31 @@ export default function Home() {
           <p className="mt-6 whitespace-pre-wrap text-left text-base leading-8 text-[#c6b8ca]">
             {selectedCard.answer.text}
           </p>
+          {(() => {
+            const nextId =
+              cards
+                .find((c) => c.id === selectedCard.card.id)
+                ?.answers.find((a) => a.id === selectedCard.answer.id)
+                ?.nextContentId || selectedCard.answer.nextContentId;
+            const next = cards.find((c) => c.id === nextId);
+            return next ? (
+              <button
+                className="atlas-next"
+                onClick={() => {
+                  setSelectedCard(null);
+                  chooseTopic(next, true);
+                }}
+              >
+                <small>ДАРААГИЙН АСУУЛТ</small>
+                <strong>{next.title}</strong>
+                <span>Үргэлжлүүлэх ↗</span>
+              </button>
+            ) : (
+              <p className="mt-6 text-sm">
+                Өөр асуулт сонирхвол доорх жагсаалтаас сонгоорой.
+              </p>
+            );
+          })()}
           <button
             type="button"
             onClick={closeModal}

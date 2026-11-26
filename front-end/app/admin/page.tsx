@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import TrendChart from "../../components/TrendChart";
 import {
   Suspense,
   useCallback,
@@ -469,7 +470,7 @@ function Dashboard() {
               ))}
             </div>
             <section className="studio-panel">
-              <h2>Өдөр бүрийн хандалт</h2>
+              <h2>Өдөр бүрийн хандалт</h2><TrendChart data={report.daily} metric="visits" label="Өдрийн хандалтын график"/>
               <p>
                 Cookie-д суурилсан тооллого. IP хаяг, нэр цуглуулахгүй; нэг
                 браузерыг өдөрт нэг удаа тоолно.
@@ -518,7 +519,7 @@ function Dashboard() {
               </article>
             </div>
             <section className="studio-panel">
-              <h2>Орлогын график</h2>
+              <h2>Орлогын график</h2><TrendChart data={report.daily} metric="revenue" label="Өдрийн орлогын график"/>
               {report.daily.map((d) => (
                 <div className="studio-chart" key={d.day}>
                   <small>{d.day}</small>

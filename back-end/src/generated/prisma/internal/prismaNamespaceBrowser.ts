@@ -100,6 +100,7 @@ export const AnswerScalarFieldEnum = {
   id: 'id',
   contentId: 'contentId',
   text: 'text',
+  nextContentId: 'nextContentId',
   visualType: 'visualType',
   imageUrl: 'imageUrl',
   iconName: 'iconName',

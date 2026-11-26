@@ -265,6 +265,7 @@ export type ContentWhereInput = {
   createdAt?: Prisma.DateTimeFilter<"Content"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Content"> | Date | string
   answers?: Prisma.AnswerListRelationFilter
+  incomingAnswers?: Prisma.AnswerListRelationFilter
 }
 
 export type ContentOrderByWithRelationInput = {
@@ -280,6 +281,7 @@ export type ContentOrderByWithRelationInput = {
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   answers?: Prisma.AnswerOrderByRelationAggregateInput
+  incomingAnswers?: Prisma.AnswerOrderByRelationAggregateInput
 }
 
 export type ContentWhereUniqueInput = Prisma.AtLeast<{
@@ -298,6 +300,7 @@ export type ContentWhereUniqueInput = Prisma.AtLeast<{
   createdAt?: Prisma.DateTimeFilter<"Content"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Content"> | Date | string
   answers?: Prisma.AnswerListRelationFilter
+  incomingAnswers?: Prisma.AnswerListRelationFilter
 }, "id">
 
 export type ContentOrderByWithAggregationInput = {
@@ -349,6 +352,7 @@ export type ContentCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   answers?: Prisma.AnswerCreateNestedManyWithoutContentInput
+  incomingAnswers?: Prisma.AnswerCreateNestedManyWithoutNextContentInput
 }
 
 export type ContentUncheckedCreateInput = {
@@ -364,6 +368,7 @@ export type ContentUncheckedCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   answers?: Prisma.AnswerUncheckedCreateNestedManyWithoutContentInput
+  incomingAnswers?: Prisma.AnswerUncheckedCreateNestedManyWithoutNextContentInput
 }
 
 export type ContentUpdateInput = {
@@ -379,6 +384,7 @@ export type ContentUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   answers?: Prisma.AnswerUpdateManyWithoutContentNestedInput
+  incomingAnswers?: Prisma.AnswerUpdateManyWithoutNextContentNestedInput
 }
 
 export type ContentUncheckedUpdateInput = {
@@ -394,6 +400,7 @@ export type ContentUncheckedUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   answers?: Prisma.AnswerUncheckedUpdateManyWithoutContentNestedInput
+  incomingAnswers?: Prisma.AnswerUncheckedUpdateManyWithoutNextContentNestedInput
 }
 
 export type ContentCreateManyInput = {
@@ -493,6 +500,11 @@ export type ContentScalarRelationFilter = {
   isNot?: Prisma.ContentWhereInput
 }
 
+export type ContentNullableScalarRelationFilter = {
+  is?: Prisma.ContentWhereInput | null
+  isNot?: Prisma.ContentWhereInput | null
+}
+
 export type StringFieldUpdateOperationsInput = {
   set?: string
 }
@@ -531,12 +543,28 @@ export type ContentCreateNestedOneWithoutAnswersInput = {
   connect?: Prisma.ContentWhereUniqueInput
 }
 
+export type ContentCreateNestedOneWithoutIncomingAnswersInput = {
+  create?: Prisma.XOR<Prisma.ContentCreateWithoutIncomingAnswersInput, Prisma.ContentUncheckedCreateWithoutIncomingAnswersInput>
+  connectOrCreate?: Prisma.ContentCreateOrConnectWithoutIncomingAnswersInput
+  connect?: Prisma.ContentWhereUniqueInput
+}
+
 export type ContentUpdateOneRequiredWithoutAnswersNestedInput = {
   create?: Prisma.XOR<Prisma.ContentCreateWithoutAnswersInput, Prisma.ContentUncheckedCreateWithoutAnswersInput>
   connectOrCreate?: Prisma.ContentCreateOrConnectWithoutAnswersInput
   upsert?: Prisma.ContentUpsertWithoutAnswersInput
   connect?: Prisma.ContentWhereUniqueInput
   update?: Prisma.XOR<Prisma.XOR<Prisma.ContentUpdateToOneWithWhereWithoutAnswersInput, Prisma.ContentUpdateWithoutAnswersInput>, Prisma.ContentUncheckedUpdateWithoutAnswersInput>
+}
+
+export type ContentUpdateOneWithoutIncomingAnswersNestedInput = {
+  create?: Prisma.XOR<Prisma.ContentCreateWithoutIncomingAnswersInput, Prisma.ContentUncheckedCreateWithoutIncomingAnswersInput>
+  connectOrCreate?: Prisma.ContentCreateOrConnectWithoutIncomingAnswersInput
+  upsert?: Prisma.ContentUpsertWithoutIncomingAnswersInput
+  disconnect?: Prisma.ContentWhereInput | boolean
+  delete?: Prisma.ContentWhereInput | boolean
+  connect?: Prisma.ContentWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ContentUpdateToOneWithWhereWithoutIncomingAnswersInput, Prisma.ContentUpdateWithoutIncomingAnswersInput>, Prisma.ContentUncheckedUpdateWithoutIncomingAnswersInput>
 }
 
 export type ContentCreateWithoutAnswersInput = {
@@ -551,6 +579,7 @@ export type ContentCreateWithoutAnswersInput = {
   sortOrder?: number
   createdAt?: Date | string
   updatedAt?: Date | string
+  incomingAnswers?: Prisma.AnswerCreateNestedManyWithoutNextContentInput
 }
 
 export type ContentUncheckedCreateWithoutAnswersInput = {
@@ -565,11 +594,47 @@ export type ContentUncheckedCreateWithoutAnswersInput = {
   sortOrder?: number
   createdAt?: Date | string
   updatedAt?: Date | string
+  incomingAnswers?: Prisma.AnswerUncheckedCreateNestedManyWithoutNextContentInput
 }
 
 export type ContentCreateOrConnectWithoutAnswersInput = {
   where: Prisma.ContentWhereUniqueInput
   create: Prisma.XOR<Prisma.ContentCreateWithoutAnswersInput, Prisma.ContentUncheckedCreateWithoutAnswersInput>
+}
+
+export type ContentCreateWithoutIncomingAnswersInput = {
+  id?: string
+  type: $Enums.ContentType
+  title: string
+  question?: string | null
+  visualType?: $Enums.VisualType
+  imageUrl?: string | null
+  iconName?: string | null
+  status?: $Enums.ContentStatus
+  sortOrder?: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  answers?: Prisma.AnswerCreateNestedManyWithoutContentInput
+}
+
+export type ContentUncheckedCreateWithoutIncomingAnswersInput = {
+  id?: string
+  type: $Enums.ContentType
+  title: string
+  question?: string | null
+  visualType?: $Enums.VisualType
+  imageUrl?: string | null
+  iconName?: string | null
+  status?: $Enums.ContentStatus
+  sortOrder?: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  answers?: Prisma.AnswerUncheckedCreateNestedManyWithoutContentInput
+}
+
+export type ContentCreateOrConnectWithoutIncomingAnswersInput = {
+  where: Prisma.ContentWhereUniqueInput
+  create: Prisma.XOR<Prisma.ContentCreateWithoutIncomingAnswersInput, Prisma.ContentUncheckedCreateWithoutIncomingAnswersInput>
 }
 
 export type ContentUpsertWithoutAnswersInput = {
@@ -595,6 +660,7 @@ export type ContentUpdateWithoutAnswersInput = {
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  incomingAnswers?: Prisma.AnswerUpdateManyWithoutNextContentNestedInput
 }
 
 export type ContentUncheckedUpdateWithoutAnswersInput = {
@@ -609,6 +675,48 @@ export type ContentUncheckedUpdateWithoutAnswersInput = {
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  incomingAnswers?: Prisma.AnswerUncheckedUpdateManyWithoutNextContentNestedInput
+}
+
+export type ContentUpsertWithoutIncomingAnswersInput = {
+  update: Prisma.XOR<Prisma.ContentUpdateWithoutIncomingAnswersInput, Prisma.ContentUncheckedUpdateWithoutIncomingAnswersInput>
+  create: Prisma.XOR<Prisma.ContentCreateWithoutIncomingAnswersInput, Prisma.ContentUncheckedCreateWithoutIncomingAnswersInput>
+  where?: Prisma.ContentWhereInput
+}
+
+export type ContentUpdateToOneWithWhereWithoutIncomingAnswersInput = {
+  where?: Prisma.ContentWhereInput
+  data: Prisma.XOR<Prisma.ContentUpdateWithoutIncomingAnswersInput, Prisma.ContentUncheckedUpdateWithoutIncomingAnswersInput>
+}
+
+export type ContentUpdateWithoutIncomingAnswersInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  type?: Prisma.EnumContentTypeFieldUpdateOperationsInput | $Enums.ContentType
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  question?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  visualType?: Prisma.EnumVisualTypeFieldUpdateOperationsInput | $Enums.VisualType
+  imageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  iconName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.EnumContentStatusFieldUpdateOperationsInput | $Enums.ContentStatus
+  sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  answers?: Prisma.AnswerUpdateManyWithoutContentNestedInput
+}
+
+export type ContentUncheckedUpdateWithoutIncomingAnswersInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  type?: Prisma.EnumContentTypeFieldUpdateOperationsInput | $Enums.ContentType
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  question?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  visualType?: Prisma.EnumVisualTypeFieldUpdateOperationsInput | $Enums.VisualType
+  imageUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  iconName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  status?: Prisma.EnumContentStatusFieldUpdateOperationsInput | $Enums.ContentStatus
+  sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  answers?: Prisma.AnswerUncheckedUpdateManyWithoutContentNestedInput
 }
 
 
@@ -618,10 +726,12 @@ export type ContentUncheckedUpdateWithoutAnswersInput = {
 
 export type ContentCountOutputType = {
   answers: number
+  incomingAnswers: number
 }
 
 export type ContentCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   answers?: boolean | ContentCountOutputTypeCountAnswersArgs
+  incomingAnswers?: boolean | ContentCountOutputTypeCountIncomingAnswersArgs
 }
 
 /**
@@ -641,6 +751,13 @@ export type ContentCountOutputTypeCountAnswersArgs<ExtArgs extends runtime.Types
   where?: Prisma.AnswerWhereInput
 }
 
+/**
+ * ContentCountOutputType without action
+ */
+export type ContentCountOutputTypeCountIncomingAnswersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.AnswerWhereInput
+}
+
 
 export type ContentSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -655,6 +772,7 @@ export type ContentSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   createdAt?: boolean
   updatedAt?: boolean
   answers?: boolean | Prisma.Content$answersArgs<ExtArgs>
+  incomingAnswers?: boolean | Prisma.Content$incomingAnswersArgs<ExtArgs>
   _count?: boolean | Prisma.ContentCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["content"]>
 
@@ -703,6 +821,7 @@ export type ContentSelectScalar = {
 export type ContentOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "type" | "title" | "question" | "visualType" | "imageUrl" | "iconName" | "status" | "sortOrder" | "createdAt" | "updatedAt", ExtArgs["result"]["content"]>
 export type ContentInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   answers?: boolean | Prisma.Content$answersArgs<ExtArgs>
+  incomingAnswers?: boolean | Prisma.Content$incomingAnswersArgs<ExtArgs>
   _count?: boolean | Prisma.ContentCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type ContentIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -712,6 +831,7 @@ export type $ContentPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
   name: "Content"
   objects: {
     answers: Prisma.$AnswerPayload<ExtArgs>[]
+    incomingAnswers: Prisma.$AnswerPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1120,6 +1240,7 @@ readonly fields: ContentFieldRefs;
 export interface Prisma__ContentClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   answers<T extends Prisma.Content$answersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Content$answersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AnswerPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  incomingAnswers<T extends Prisma.Content$incomingAnswersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Content$incomingAnswersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AnswerPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1556,6 +1677,30 @@ export type ContentDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Inter
  * Content.answers
  */
 export type Content$answersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Answer
+   */
+  select?: Prisma.AnswerSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Answer
+   */
+  omit?: Prisma.AnswerOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.AnswerInclude<ExtArgs> | null
+  where?: Prisma.AnswerWhereInput
+  orderBy?: Prisma.AnswerOrderByWithRelationInput | Prisma.AnswerOrderByWithRelationInput[]
+  cursor?: Prisma.AnswerWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.AnswerScalarFieldEnum | Prisma.AnswerScalarFieldEnum[]
+}
+
+/**
+ * Content.incomingAnswers
+ */
+export type Content$incomingAnswersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   /**
    * Select specific fields to fetch from the Answer
    */

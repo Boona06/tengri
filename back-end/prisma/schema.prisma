@@ -40,6 +40,7 @@ model Content {
   sortOrder  Int           @default(0)
 
   answers    Answer[]
+  incomingAnswers Answer[] @relation("FollowUp")
 
   createdAt  DateTime      @default(now())
   updatedAt  DateTime      @updatedAt
@@ -52,6 +53,8 @@ model Answer {
   content    Content    @relation(fields: [contentId], references: [id], onDelete: Cascade)
 
   text       String     @db.Text
+  nextContentId String?
+  nextContent Content? @relation("FollowUp", fields: [nextContentId], references: [id], onDelete: SetNull)
 
   visualType VisualType @default(IMAGE)
   imageUrl   String?

@@ -24,6 +24,7 @@ export function createPublicContentsRouter(
             orderBy: { position: "asc" },
             select: {
               id: true, position: true, visualType: true,
+              nextContentId: true,
               imageUrl: true, iconName: true,
             },
           },

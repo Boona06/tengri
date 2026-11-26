@@ -16,6 +16,7 @@ type VisualFields = {
 };
 
 type AnswerForm = VisualFields & {
+  nextContentId: string;
   text: string;
 };
 
@@ -45,6 +46,7 @@ type ContentRecord = {
     imageUrl: string | null;
     iconName: string | null;
     position: number;
+    nextContentId: string | null;
   }>;
 };
 
@@ -61,6 +63,7 @@ type ApiResult<T> = {
 function emptyAnswer(): AnswerForm {
   return {
     text: "",
+    nextContentId: "",
     visualType: "ICON",
     imageUrl: "",
     iconName: "✧",
@@ -309,6 +312,7 @@ export default function AdminContentsPage() {
         return answer
           ? {
               text: answer.text,
+              nextContentId: answer.nextContentId || "",
               visualType: answer.visualType,
               imageUrl: answer.imageUrl ?? "",
               iconName: answer.iconName ?? "",
@@ -374,6 +378,7 @@ export default function AdminContentsPage() {
           sortOrder: Number(form.sortOrder),
           answers: form.answers.map((answer) => ({
             text: answer.text.trim(),
+            nextContentId: answer.nextContentId || null,
             visualType: answer.visualType,
             imageUrl: answer.imageUrl.trim() || null,
             iconName: answer.iconName.trim() || null,
@@ -717,6 +722,30 @@ export default function AdminContentsPage() {
                           className="w-full resize-y rounded-lg border border-[#957c55]/40 bg-[#15101b] px-3 py-3 text-sm leading-6 outline-none focus:border-[#d0ad74]"
                         />
                       </div>
+                      <label className="mt-4 block text-sm">
+                        Дараагийн асуулт
+                        <select
+                          className="mt-2 w-full rounded-lg border p-3"
+                          value={answer.nextContentId}
+                          onChange={(e) =>
+                            changeAnswer(index, {
+                              nextContentId: e.target.value,
+                            })
+                          }
+                        >
+                          <option value="">Үргэлжлэлгүй</option>
+                          {contents
+                            .filter((c) => c.id !== editingId)
+                            .map((c) => (
+                              <option key={c.id} value={c.id}>
+                                {c.title} · {c.status}
+                              </option>
+                            ))}
+                        </select>
+                        <small>
+                          Хариултаа нээсний дараа энэ асуулт руу үргэлжилнэ.
+                        </small>
+                      </label>
                     </div>
                   ))}
                 </div>
