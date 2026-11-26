@@ -255,16 +255,6 @@ export default function Home() {
           </p>
         </div>
         <div className="atlas-note">
-          <span aria-hidden="true">↗</span>
-          <p>
-            {settings.firstCardFree
-              ? "Эхний сонголт биднээс."
-              : "Өөртөө хэдэн хором гарга."}
-          </p>
-          <small>
-            Дараагийн шинэ карт ·{" "}
-            {settings.cardPriceMnt.toLocaleString("en-US")}₮
-          </small>
         </div>
       </section>
       <section id="cards" className="atlas-catalogue" aria-label="Карт сонгох">
