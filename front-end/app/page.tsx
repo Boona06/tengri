@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import InvoicePanel from "../components/InvoicePanel";
 import Modal from "../components/Modal";
 import TarotFace from "../components/TarotFace";
+import ReadableText from "../components/ReadableText";
 import {
   FLIP_DURATION_MS,
   parseAnswer,
@@ -371,9 +372,7 @@ export default function Home() {
           </p>
           <h2 className="mt-3 text-xl text-[#193d37]">{pickerCard.title}</h2>
           {pickerCard.question && (
-            <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-[#586e65]">
-              {pickerCard.question}
-            </p>
+            <ReadableText key={pickerCard.id} text={pickerCard.question} className="mt-3 whitespace-pre-wrap text-sm leading-7 text-[#586e65]" />
           )}
           <h3 className="mt-5 text-xl text-[#193d37]">
             Гурван нууц картаас нэгийг сонго
@@ -445,9 +444,7 @@ export default function Home() {
               {selectedCard.card.question}
             </h3>
           )}
-          <p className="mt-6 whitespace-pre-wrap text-left text-base leading-8 text-[#586e65]">
-            {selectedCard.answer.text}
-          </p>
+          <ReadableText key={selectedCard.answer.id} text={selectedCard.answer.text ?? ""} className="mt-6 whitespace-pre-wrap text-left text-base leading-8 text-[#586e65]" />
           {(() => {
             const nextId =
               cards

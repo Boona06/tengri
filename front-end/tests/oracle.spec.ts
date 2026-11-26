@@ -177,6 +177,7 @@ for (const choice of [1, 2, 3]) {
     page,
   }) => {
     const api = await mockApi(page);
+    if (choice === 1) await page.setViewportSize({ width: 390, height: 844 });
     const errors: string[] = [];
     page.on("pageerror", (error) => errors.push(error.message));
     await page.goto("/");
@@ -191,6 +192,13 @@ for (const choice of [1, 2, 3]) {
       .click();
     const answer = page.getByRole("dialog", { name: "Таны хариулт" });
     await expect(answer).toBeVisible();
+    if (choice === 1) {
+      const toggle = answer.getByRole("button", { name: "Дэлгэрэнгүй ↓" });
+      await expect(toggle).toHaveAttribute("aria-expanded", "false");
+      await toggle.click();
+      await expect(answer.getByRole("button", { name: "Хураах ↑" })).toHaveAttribute("aria-expanded", "true");
+      await answer.getByRole("button", { name: "Хураах ↑" }).click();
+    }
     expect(api.revealed).toHaveLength(1);
     await expect(answer.getByRole("region", { name: "Үргэлжлүүлэх асуултууд" })).toBeVisible();
     await expect(answer.locator(".atlas-next")).toHaveCount(11);

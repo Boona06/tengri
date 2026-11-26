@@ -1100,3 +1100,12 @@ body {
 
 .atlas-suggestions { display: grid; gap: 12px; max-height: 360px; overflow-y: auto; margin-top: 18px; padding: 3px; }
 .atlas-suggestions .atlas-next { margin-top: 0; width: 100%; text-align: left; }
+
+.readable-preview, .readable-toggle { display: none; }
+@media (max-width: 640px) {
+  .readable-full { display: none; }
+  .readable-preview { display: inline; }
+  .readable-text:has(.readable-toggle) .is-collapsed { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 6; overflow: hidden; }
+  .readable-toggle { display: inline-block; margin-top: 10px; color: #244b43; font-size: 13px; font-weight: 600; text-decoration: underline; text-underline-offset: 4px; cursor: pointer; }
+  .atlas-card > p { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
+}
