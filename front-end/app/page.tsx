@@ -268,7 +268,6 @@ export default function Home() {
           </p>
 
           <h1 className="text-[clamp(1.9rem,8vw,3rem)] font-light leading-[1.25] tracking-[0.02em] sm:text-6xl sm:tracking-widest">
-            Юу бодогдоод байна?
             <span className="mt-1 block text-[#d8bd83] sm:mt-3">
               Нэг карт сонгоё.
             </span>
