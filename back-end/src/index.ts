@@ -8,12 +8,15 @@ import jwt from "jsonwebtoken";
 import { compare } from "bcryptjs";
 import { rateLimit } from "express-rate-limit";
 import { z } from "zod";
+import { createOperationsRouter, ownerOnly } from "./routes/operations.ts";
+import { createJourneyRouter, settle } from "./routes/journey.ts";
 
 import { prisma } from "./lib/prisma.ts";
 import { createAdminContentsRouter } from "./routes/admin-contents.ts";
 import { createPublicContentsRouter } from "./routes/public-contents.ts";
 
 const app = express();
+if (process.env.VERCEL) app.set("trust proxy", 1);
 
 const PORT = Number(process.env.PORT || 4000);
 const isProduction = process.env.NODE_ENV === "production";
@@ -42,6 +45,23 @@ app.use(
 app.use(express.json({ limit: "1mb" }));
 
 app.use(cookieParser());
+app.use((req, res, next) => {
+  const origin = req.get("origin");
+  if (
+    !["GET", "HEAD", "OPTIONS"].includes(req.method) &&
+    origin &&
+    origin !== (process.env.FRONTEND_ORIGIN || "http://localhost:3000")
+  ) {
+    res
+      .status(403)
+      .json({
+        success: false,
+        message: "Хүсэлтийн эх сурвалж зөвшөөрөгдөөгүй.",
+      });
+    return;
+  }
+  next();
+});
 
 // ========================================
 // COOKIE CONFIG
@@ -105,6 +125,10 @@ app.get("/api/health", async (_req, res) => {
 // Зөвхөн нийтлэгдсэн сэдэв, асуултыг харуулна.
 // Төлбөртэй хариултын текст эндээс гарахгүй.
 
+app.post("/api/contents/:contentId/answers/:answerId/reveal", (_req, res) => {
+  res.status(410).json({ success: false, message: "Хуудсаа шинэчилнэ үү." });
+});
+app.use("/api/journey", createJourneyRouter());
 app.use("/api/contents", createPublicContentsRouter(prisma));
 
 // ========================================
@@ -133,7 +157,7 @@ app.post("/api/admin/login", loginLimiter, async (req, res) => {
 
     const valid = admin ? await compare(password, admin.passwordHash) : false;
 
-    if (!admin || !valid) {
+    if (!admin || !admin.active || !valid) {
       res.status(401).json({
         success: false,
         message: "Email эсвэл нууц үг буруу байна.",
@@ -141,10 +165,14 @@ app.post("/api/admin/login", loginLimiter, async (req, res) => {
       return;
     }
 
-    const token = jwt.sign({ role: "admin" }, sessionSecret, {
-      subject: admin.id,
-      expiresIn: "12h",
-    });
+    const token = jwt.sign(
+      { role: "admin", version: admin.sessionVersion },
+      sessionSecret,
+      {
+        subject: admin.id,
+        expiresIn: "12h",
+      },
+    );
 
     res.cookie(COOKIE_NAME, token, {
       ...cookieOptions,
@@ -205,10 +233,17 @@ async function requireAdmin(req: Request, res: Response, next: NextFunction) {
       select: {
         id: true,
         email: true,
+        role: true,
+        active: true,
+        sessionVersion: true,
       },
     });
 
-    if (!admin) {
+    if (
+      !admin ||
+      !admin.active ||
+      (payload.version ?? 0) !== admin.sessionVersion
+    ) {
       res.status(401).json({
         success: false,
         message: "Admin хэрэглэгч олдсонгүй.",
@@ -264,6 +299,16 @@ app.post("/api/admin/logout", (_req, res) => {
 // DELETE  /api/admin/contents/:id
 
 app.use("/api/admin/contents", createAdminContentsRouter(requireAdmin));
+app.use("/api/admin/operations", createOperationsRouter(requireAdmin));
+app.post(
+  "/api/admin/payments/:id/mock-confirm",
+  requireAdmin,
+  ownerOnly,
+  async (req, res) => {
+    await settle(String(req.params.id), true);
+    res.json({ success: true });
+  },
+);
 
 // ========================================
 // 404
@@ -280,6 +325,30 @@ app.use((_req, res) => {
 // SERVER START
 // ========================================
 
+app.use((error: unknown, _req: Request, res: Response, _next: NextFunction) => {
+  if (error instanceof z.ZodError) {
+    res
+      .status(400)
+      .json({
+        success: false,
+        message: "Мэдээллээ шалгана уу.",
+        issues: error.issues,
+      });
+    return;
+  }
+  const code = (error as { code?: string })?.code;
+  res
+    .status(code === "P2002" ? 409 : 400)
+    .json({
+      success: false,
+      message:
+        code === "P2002"
+          ? "Энэ мэдээлэл аль хэдийн бүртгэгдсэн байна."
+          : error instanceof Error && /[А-Яа-яӨөҮү]/.test(error.message)
+            ? error.message
+            : "Үйлдлийг гүйцэтгэж чадсангүй.",
+    });
+});
 app.listen(PORT, () => {
   console.log("================================");
   console.log("TENGER ATLS BACKEND");

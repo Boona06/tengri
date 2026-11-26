@@ -69,6 +69,9 @@ model AdminUser {
   id           String   @id @default(cuid())
   email        String   @unique
   passwordHash String
+  role         String   @default("ADMIN")
+  active       Boolean  @default(true)
+  sessionVersion Int    @default(0)
 
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -78,6 +81,76 @@ model SiteSettings {
   id            String   @id @default("main")
   cardPriceMnt  Int      @default(3000)
   firstCardFree Boolean  @default(true)
+  siteName      String   @default("TENGER ATLS")
 
   updatedAt     DateTime @updatedAt
+}
+
+model Visitor {
+  id String @id @default(cuid())
+  createdAt DateTime @default(now())
+  visits Visit[]
+  selections Selection[]
+}
+
+model Visit {
+  id String @id @default(cuid())
+  visitorId String
+  visitor Visitor @relation(fields: [visitorId], references: [id])
+  day String
+  createdAt DateTime @default(now())
+  @@unique([visitorId, day])
+  @@index([createdAt])
+}
+
+model Coupon {
+  id String @id @default(cuid())
+  code String @unique
+  kind String
+  value Int
+  active Boolean @default(true)
+  expiresAt DateTime
+  maxUses Int
+  used Int @default(0)
+  createdAt DateTime @default(now())
+}
+
+model Selection {
+  id String @id @default(cuid())
+  visitorId String
+  visitor Visitor @relation(fields: [visitorId], references: [id])
+  contentId String
+  answerId String
+  title String
+  answer Json
+  unlocked Boolean @default(false)
+  free Boolean @default(false)
+  createdAt DateTime @default(now())
+  payments Payment[]
+  @@unique([visitorId, contentId])
+}
+
+model Payment {
+  id String @id @default(cuid())
+  selectionId String
+  selection Selection @relation(fields: [selectionId], references: [id])
+  amount Int
+  originalAmount Int
+  couponCode String?
+  mode String
+  status String @default("PENDING")
+  invoiceId String? @unique
+  providerData Json?
+  expiresAt DateTime
+  paidAt DateTime?
+  createdAt DateTime @default(now())
+  @@index([createdAt, status])
+}
+
+model AuditLog {
+  id String @id @default(cuid())
+  adminId String
+  action String
+  target String
+  createdAt DateTime @default(now())
 }

@@ -478,7 +478,7 @@ export default function AdminContentsPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#0a0812] text-[#f4ead8]">
+    <main className="content-workspace min-h-screen bg-[#0a0812] text-[#f4ead8]">
       {/* HEADER */}
       <header className="border-b border-[#b99a65]/20">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-5 py-5">
@@ -488,7 +488,7 @@ export default function AdminContentsPage() {
             </h1>
 
             <p className="mt-1 text-[10px] tracking-[0.22em] text-[#9582a1]">
-              CONTENT MANAGEMENT
+              КОНТЕНТ УДИРДЛАГА
             </p>
           </div>
 
@@ -496,7 +496,7 @@ export default function AdminContentsPage() {
             href="/admin"
             className="rounded-full border border-[#b99a65]/40 px-5 py-2.5 text-xs text-[#d6b77d] hover:bg-[#b99a65]/10"
           >
-            ← DASHBOARD
+            ← Удирдлагын самбар
           </a>
         </div>
       </header>
@@ -505,11 +505,11 @@ export default function AdminContentsPage() {
         <div className="mb-8 flex flex-wrap items-end justify-between gap-5">
           <div>
             <p className="text-xs tracking-[0.25em] text-[#a98c63]">
-              ADMIN PANEL
+              НЭГ ДОР, ОЙЛГОМЖТОЙ
             </p>
 
             <h2 className="mt-3 text-2xl font-light text-[#ead8b6] sm:text-3xl">
-              Сэдэв ба асуултууд
+              Контент ба гурван хариулт
             </h2>
 
             <p className="mt-3 text-sm text-[#a99dad]">
@@ -561,7 +561,7 @@ export default function AdminContentsPage() {
             <div className="mb-7 flex items-center justify-between gap-3">
               <div>
                 <p className="text-[10px] tracking-[0.25em] text-[#a98c63]">
-                  CONTENT EDITOR
+                  КОНТЕНТ ЗАСАХ
                 </p>
 
                 <h3 className="mt-2 text-xl text-[#ead8b6]">

@@ -123,6 +123,36 @@ export function createAdminContentsRouter(requireAdmin: RequestHandler) {
 
   // Бүх endpoint зөвхөн нэвтэрсэн админд
   router.use(requireAdmin);
+  router.use(async (req, res, next) => {
+    if (
+      res.locals.admin.role === "EDITOR" &&
+      (req.method === "DELETE" ||
+        (req.body?.status && req.body.status !== "DRAFT"))
+    ) {
+      res
+        .status(403)
+        .json({
+          success: false,
+          message: "Редактор зөвхөн ноорог засах эрхтэй.",
+        });
+      return;
+    }
+    if (res.locals.admin.role === "EDITOR" && req.method === "PUT") {
+      const current = await prisma.content.findUnique({
+        where: { id: req.path.slice(1) },
+      });
+      if (current && current.status !== "DRAFT") {
+        res
+          .status(403)
+          .json({
+            success: false,
+            message: "Нийтэлсэн контентыг модератор засна.",
+          });
+        return;
+      }
+    }
+    next();
+  });
 
   // Бүх контент
   router.get("/", async (_req, res) => {
